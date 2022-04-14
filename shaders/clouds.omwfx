@@ -1,0 +1,131 @@
+uniform_float uFactor {
+    step = 0.1;
+    min = 0.01;
+    max = 20.0;
+    default = 1.0;
+}
+
+sampler_2d noise {
+    source = "textures/noise.png";
+    mag_filter = linear;
+    min_filter = linear;
+    wrap_s = repeat;
+    wrap_t = repeat;
+}
+
+fragment main {
+
+    omw_In vec2 omw_TexCoord;
+
+    uniform sampler2D omw_SamplerLastShader;
+    uniform sampler2D omw_SamplerDepth;
+
+    vec3 wpos_at() {
+        vec2 uv = omw_TexCoord;
+
+        float depth = omw_GetDepth(omw_SamplerDepth, uv);
+        #ifdef OMW_REVERSE_Z
+            depth = 1 - depth;
+        #endif
+
+        mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
+        //mat4 inv = inverse(omw.projectionMatrix * omw.viewMatrix);
+
+        vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
+        vec4 view_space = inv * clip_space;
+
+        view_space /= view_space.w;
+        if (depth == 0.0 && false) {
+            vec3 direction = normalize(view_space.xyz);
+            return direction.xyz * 524288.0625 + omw.eyePos.xyz;
+        } else {
+            return view_space.xyz;
+        }
+    }
+
+    //uniform sampler2D noise_samp;
+
+    #define M1 2047667443U
+    #define M2 3883706873U
+    #define M3 3961281721U
+
+    float hash_one(uint q) {
+        uint n = ((M3 * q) ^ M2) * M1;
+        return float(n) * (1.0 / float(0xffffffffU));
+    }
+
+    float noise_2d(vec2 pos) {
+        return omw_Texture2D(noise, pos).x;
+    }
+
+    float noise_3d(vec3 pos) {
+        pos.z *= 15.0;
+        uint z = uint(trunc(pos.z));
+        vec2 offs0 = vec2(hash_one(z), hash_one(z + 73u));
+        vec2 offs1 = vec2(hash_one(z + 1u), hash_one(z + 1u + 73u));
+        return mix(
+            noise_2d(pos.xy + offs0),
+            noise_2d(pos.xy + offs1),
+            fract(pos.z)
+        );
+    }
+
+    float fog_at(vec3 wpos) {
+        wpos.xy += vec2(
+            noise_2d(wpos.xy * 0.0001),
+            noise_2d(wpos.xy * 0.0001)
+        ) * 300;
+        float time = omw.simulationTime * 0.1;
+        float cloud = 1.0
+            * max(noise_3d(wpos / 300000 + time * 0.1), 0) * 0.2
+            * max(noise_3d(wpos / 10000 - vec3(vec2(time * 1.0), 0)), 0) * 0.2
+            * max(noise_3d(wpos / 1000 + vec3(vec2(time * 2.0), 0)), 0) * 0.5
+        ;
+        return wpos.z > omw.waterHeight ? max(cloud, 0) / (1.0 + max(wpos.z - omw.waterHeight, 0) * 0.01) : 0;
+    }
+
+    void main()
+    {
+        vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
+        float depth = omw_GetDepth(omw_SamplerDepth, omw_TexCoord);
+
+        mat4 inv_depth = omw.invProjectionMatrix;
+
+        vec3 wpos = wpos_at();
+        vec3 dir = normalize(wpos - omw.eyePos.xyz);
+
+        float max_dist = distance(omw.eyePos.xyz, wpos);
+
+        float fog = 0.0;
+        float dist = 1.0;
+        int i = 0;
+        while (dist < max_dist && i < 100) {
+            float new_dist = min(dist * 1.5, max_dist);
+
+            fog += fog_at(omw.eyePos.xyz + dir * new_dist) * (new_dist - dist);
+
+            dist = new_dist;
+            i += 1;
+        }
+
+        float fog_factor = 1.0 - 1.0 / (fog + 1.0);
+
+        float zNear = omw.near;
+        float zFar = omw.far;
+        omw_FragColor = mix(
+            vec4(col.rgb, 1),
+            //vec4(fract(wpos * 0.001), 1),
+            //vec4(vec3((2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear))) * uFactor, 1.0),
+            vec4(1),
+            fog_factor
+        );
+    }
+}
+
+technique {
+    passes = main;
+    description = "Volumetric Clouds";
+    author = "zesterer";
+    version = "1.0";
+    flags = disable_interiors, disable_sunglare;
+}
