@@ -1,8 +1,8 @@
 uniform_float quality {
-    default = 5.0;
-    min = 1.0;
+    default = 2.5;
+    min = 0.0;
     max = 10.0;
-    step = 0.1;
+    step = 0.5;
     description = "Quality of clouds";
 }
 
@@ -98,18 +98,18 @@ fragment main {
             wpos.xy += vec2(
                 noise_2d(wpos.xy * 0.0005) - 0.5,
                 noise_2d(wpos.xy * 0.0005) - 0.5
-            ) * 350;
+            ) * 250;
         }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float mist_nz = 0.2
             * noise_3d(wpos / 10000 - time * 0.3) * 0.2
             * mix(
                 1.0,
-                (0.5 - abs(noise_3d((wpos + time * 3000) / 2000) - 0.5)) * 0.4,
+                (0.75 - abs(noise_3d((wpos + time * 3000) / 2000) - 0.5)) * 0.4,
                 1.0 / (1.0 + dist * 0.00003)
             )
         ;
-        float mist_base = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.85) * 6000;
+        float mist_base = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.8) * 6000;
         float mist_height = 5000;
 
         float mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
@@ -118,7 +118,7 @@ fragment main {
         float cloud = 0.0;
         float sun_access = 1.0;
         if (clouds) {
-            cloud_base = omw.waterHeight + 550000
+            cloud_base = omw.waterHeight + 250000
                 + (noise_2d(wpos.xy * 0.0000001 + time.xy * 0.03) - 0.5) * 600000
                 + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 50000;
             cloud = pow(max(
@@ -126,8 +126,8 @@ fragment main {
                 + (noise_3d(wpos / 1000000 + time * 0.1) - 0.5) * 0.5
                 + (noise_3d(wpos / 200000 - time * 0.1) - 0.5) * 0.1
                 , 0
-            ), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
-            sun_access -= min(cloud * 1000000, 1) * clamp((cloud_base - wpos.z) * 0.0000025
+            ), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 800000, 0), 8);
+            sun_access -= min(cloud * 1000000, 1) * clamp((cloud_base - wpos.z) * 0.0000015
                 + (noise_2d(wpos.xy / 200000 - time.xy * 0.2) - 0.5) * 0.05
                 , -0.2, 0.2);
         }
@@ -158,16 +158,17 @@ fragment main {
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
-        float moon_light = max(-omw.sunPos.z, 0) * 0.35;
+        float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.2;
         float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.05;
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), 0.35) + direct_light * sun_color;
 
-        float step_factor = mix(0.5, 4, quality / 10);
+        float step_factor = 1.0 / mix(0.75, 1, quality);
 
         float dist = max_dist;
+        int f = int(log(dist) / step_factor);
         int i = 0;
-        while (dist > 1 && i < 100) {
-            float new_dist = exp(floor(log(dist - 1) * step_factor) / step_factor);
+        while (f > 1) {
+            float new_dist = min(exp(f * step_factor), max_dist);
 
             vec3 spos = omw.eyePos.xyz + dir * (new_dist + dist) * 0.5;
             vec2 fog = fog_at(spos, new_dist);
@@ -177,7 +178,7 @@ fragment main {
             col = mix(col, vec4(fog_color * fog.y, 1), fog_factor);
 
             dist = new_dist;
-            i += 1;
+            f -= 1;
         }
 
         return col;
