@@ -76,9 +76,10 @@ fragment main {
 
     float fog_at(vec3 wpos, float dist) {
         /*
-        wpos.xy += vec2(
+        wpos.xyz += vec3(
             noise_2d(wpos.xy * 0.0001),
-            noise_2d(wpos.xy * 0.0001)
+            noise_2d(wpos.xy * 0.0001),
+            noise_3d(wpos * 0.0001)
         ) * 500;
         */
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
@@ -102,7 +103,7 @@ fragment main {
         while (dist < max_dist && i < 100) {
             float new_dist = min(dist * (1.0 + 1.0 / quality), max_dist);
 
-            fog += fog_at(omw.eyePos.xyz + dir * dist, new_dist) * (new_dist - dist);
+            fog += fog_at(omw.eyePos.xyz + dir * (dist + new_dist) * 0.5, new_dist) * (new_dist - dist);
 
             dist = new_dist;
             i += 1;
