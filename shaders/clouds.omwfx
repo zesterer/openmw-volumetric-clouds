@@ -143,7 +143,7 @@ fragment main {
     vec3 sun_color = mix(
         vec3(2, 0.3, 0) * 3,
         vec3(0.6, 0.5, 0.0),
-        pow(max(omw.sunPos.z, 0), 0.2)
+        pow(max(omw.sunPos.z, 0), 0.1)
     );
 
     vec3 sky_color = mix(
@@ -159,7 +159,7 @@ fragment main {
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
         float moon_light = max(-omw.sunPos.z, 0) * 0.35;
-        float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 6) * 0.05;
+        float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 6) * pow(max(omw.sunPos.z, 0), 0.2) * 0.1;
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), 0.35) + direct_light * sun_color;
 
         float step_factor = mix(0.5, 4, quality / 10);
@@ -185,8 +185,8 @@ fragment main {
 
     vec3 sky_col(vec3 dir) {
         vec3 diffuse = sky_color;
-        vec3 sun = clamp((dot(dir, omw.sunPos.xyz) - 1.0348) * 8, 0, 1) * sun_color * 800;
-        vec3 sun_glare = pow(max(dot(dir, omw.sunPos.xyz), 0), 8) * sun_color * 0.5;
+        vec3 sun = clamp((dot(dir, omw.sunPos.xyz) - 1.0348) * 8, 0, 1) * sun_color * 1500;
+        vec3 sun_glare = pow(max(dot(dir, omw.sunPos.xyz), 0), 8) * sun_color * 0.3;
 
         return diffuse + sun + sun_glare;
     }
