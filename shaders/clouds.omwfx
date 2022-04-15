@@ -10,8 +10,16 @@ uniform_float cloud_density {
     default = 0.5;
     min = 0.0;
     max = 1.0;
-    step = 0.1;
+    step = 0.05;
     description = "Density of clouds";
+}
+
+uniform_float mist_density {
+    default = 0.5;
+    min = 0.0;
+    max = 1.0;
+    step = 0.05;
+    description = "Density of mist";
 }
 
 uniform_bool swirling {
@@ -109,7 +117,7 @@ fragment main {
             ) * 250;
         }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
-        float mist_nz = 0.2
+        float mist_nz = 0.4 * mist_density
             * noise_3d(wpos / 10000 - time * 0.3) * 0.2
             * mix(
                 1.0,
