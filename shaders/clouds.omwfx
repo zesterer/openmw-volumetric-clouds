@@ -6,6 +6,14 @@ uniform_float quality {
     description = "Quality of clouds";
 }
 
+uniform_float cloud_density {
+    default = 0.5;
+    min = 0.0;
+    max = 1.0;
+    step = 0.1;
+    description = "Density of clouds";
+}
+
 uniform_bool swirling {
     default = false;
     description = "An additional swirling effect for mist";
@@ -122,13 +130,13 @@ fragment main {
                 + (noise_2d(wpos.xy * 0.0000003 + time.xy * 0.03) - 0.5) * 300000
                 + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 50000;
             cloud = pow(max(
-                noise_2d(wpos.xy / 5000000 - time.xy * 0.05) - 0.3
+                noise_2d(wpos.xy / 5000000 - time.xy * 0.05) - 0.8 + cloud_density
                 + (noise_3d(wpos / 1000000 + time * 0.1) - 0.5) * 0.5
                 + (noise_3d(wpos / 200000 - time * 0.1) - 0.5) * 0.1
                 , 0
             ), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
             sun_access -= min(cloud * 1000000, 1) * clamp((cloud_base - wpos.z) * 0.0000025
-                + (noise_2d(wpos.xy / 500000 - time.xy * 0.2) - 0.5) * 0.15
+                + (noise_2d(wpos.xy / 300000 - time.xy * 0.2) - 0.5) * 0.1
                 , -0.2, 0.2);
         }
 
