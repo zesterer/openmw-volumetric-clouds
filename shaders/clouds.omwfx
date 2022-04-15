@@ -101,7 +101,7 @@ fragment main {
             ) * 450;
         }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
-        float mist_nz = 0.3
+        float mist_nz = 0.2
             * noise_3d(wpos / 10000 - time * 0.3) * 0.2
             * mix(
                 1.0,
@@ -159,7 +159,7 @@ fragment main {
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
         float moon_light = max(-omw.sunPos.z, 0) * 0.35;
-        float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 6) * pow(max(omw.sunPos.z, 0), 0.2) * 0.1;
+        float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.05;
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), 0.35) + direct_light * sun_color;
 
         float step_factor = mix(0.5, 4, quality / 10);
@@ -185,7 +185,7 @@ fragment main {
 
     vec3 sky_col(vec3 dir) {
         vec3 diffuse = sky_color;
-        vec3 sun = clamp((dot(dir, omw.sunPos.xyz) - 1.0348) * 8, 0, 1) * sun_color * 1500;
+        vec3 sun = clamp((dot(dir, omw.sunPos.xyz) - 1.0348) * 8, 0, 1) * sun_color * 500;
         vec3 sun_glare = pow(max(dot(dir, omw.sunPos.xyz), 0), 8) * sun_color * 0.3;
 
         return diffuse + sun + sun_glare;
