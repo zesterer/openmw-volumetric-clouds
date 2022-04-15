@@ -1,7 +1,7 @@
 uniform_float quality {
-    default = 0.5;
-    min = 0.1;
-    max = 1.0;
+    default = 5.0;
+    min = 1.0;
+    max = 10.0;
     step = 0.1;
     description = "Quality of clouds";
 }
@@ -21,30 +21,33 @@ fragment main {
     uniform sampler2D omw_SamplerLastShader;
     uniform sampler2D omw_SamplerDepth;
 
-    vec3 wpos_at() {
-        vec2 uv = omw_TexCoord;
+    #define HORIZON 500000.0
 
+    float dist_at(vec2 uv) {
         float depth = omw_GetDepth(omw_SamplerDepth, uv);
         #ifdef OMW_REVERSE_Z
             depth = 1 - depth;
         #endif
 
         mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
-        //mat4 inv = inverse(omw.projectionMatrix * omw.viewMatrix);
 
         vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
         vec4 view_space = inv * clip_space;
-
-        view_space /= view_space.w;
-        if (depth == 0.0 && false) {
-            vec3 direction = normalize(view_space.xyz);
-            return direction.xyz * 524288.0625 + omw.eyePos.xyz;
-        } else {
-            return view_space.xyz;
-        }
+        return view_space.z / view_space.w;
     }
 
-    //uniform sampler2D noise_samp;
+    vec3 wpos_at(vec2 uv) {
+        float depth = omw_GetDepth(omw_SamplerDepth, uv);
+        #ifdef OMW_REVERSE_Z
+            depth = 1 - depth;
+        #endif
+
+        mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
+
+        vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
+        vec4 view_space = inv * clip_space;
+        return view_space.xyz / view_space.w;
+    }
 
     #define M1 2047667443U
     #define M2 3883706873U
@@ -71,18 +74,41 @@ fragment main {
         );
     }
 
-    float fog_at(vec3 wpos) {
+    float fog_at(vec3 wpos, float dist) {
         wpos.xy += vec2(
             noise_2d(wpos.xy * 0.0001),
             noise_2d(wpos.xy * 0.0001)
-        ) * 300;
-        float time = omw.simulationTime * 0.1;
+        ) * 500;
+        vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float cloud = 1.0
-            * max(noise_3d(wpos / 300000 + time * 0.1), 0) * 0.2
-            * max(noise_3d(wpos / 10000 - vec3(vec2(time * 1.0), 0)), 0) * 0.2
-            * max(noise_3d(wpos / 1000 + vec3(vec2(time * 2.0), 0)), 0) * 0.5
+            * max(noise_3d(wpos / 300000 + time * 0.03) * 1.6 - 0.4, 0) * 0.2
+            * noise_3d(wpos / 3000 - time * 0.3) * 0.2
+            * mix(
+                1.0,
+                ((noise_3d(wpos / 1000 + time * 3) - 0.5) * 1.0 + 0.5) * 0.5,
+                1.0 / (1.0 + dist * 0.000000)
+            )
         ;
-        return wpos.z > omw.waterHeight ? max(cloud, 0) / (1.0 + max(wpos.z - omw.waterHeight, 0) * 0.01) : 0;
+        return max(cloud, 0) / (1.0 + max(wpos.z - omw.waterHeight, 0) * 0.01);
+    }
+
+    vec3 apply_fog(vec3 col, vec3 wpos, vec3 dir, float max_dist) {
+        float fog = 0.0;
+        float dist = 1.0;
+        int i = 0;
+        while (dist < max_dist && i < 100) {
+            float new_dist = min(dist * (1.0 + 1.0 / quality), max_dist);
+
+            fog += fog_at(omw.eyePos.xyz + dir * new_dist, new_dist) * (new_dist - dist);
+
+            dist = new_dist;
+            i += 1;
+        }
+
+        float fog_factor = 1.0 - 1.0 / (fog + 1.0);
+        vec3 fog_color = (vec3(omw.sunVis) + 0.3) * 0.75 * omw.fogColor.rgb;
+
+        return mix(col, fog_color, fog_factor);
     }
 
     void main()
@@ -92,35 +118,13 @@ fragment main {
 
         mat4 inv_depth = omw.invProjectionMatrix;
 
-        vec3 wpos = wpos_at();
+        vec3 wpos = wpos_at(omw_TexCoord);
         vec3 dir = normalize(wpos - omw.eyePos.xyz);
 
         float max_dist = distance(omw.eyePos.xyz, wpos);
+        col.rgb = apply_fog(col.rgb, wpos, dir, max_dist);
 
-        float fog = 0.0;
-        float dist = 1.0;
-        int i = 0;
-        while (dist < max_dist && i < 100) {
-            float new_dist = min(dist * (1.0 + 0.1 / quality), max_dist);
-
-            fog += fog_at(omw.eyePos.xyz + dir * new_dist) * (new_dist - dist);
-
-            dist = new_dist;
-            i += 1;
-        }
-
-        float fog_factor = 1.0 - 1.0 / (fog + 1.0);
-        vec3 fog_color = max(vec3(omw.sunVis), 0.2) * omw.sunColor.rgb;
-
-        float zNear = omw.near;
-        float zFar = omw.far;
-        omw_FragColor = mix(
-            vec4(col.rgb, 1),
-            //vec4(fract(wpos * 0.001), 1),
-            //vec4(vec3((2.0 * zNear) / (zFar + zNear - depth * (zFar - zNear))) * uFactor, 1.0),
-            vec4(fog_color, 1),
-            fog_factor
-        );
+        omw_FragColor = col;
     }
 }
 
