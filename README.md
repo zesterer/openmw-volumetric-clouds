@@ -17,7 +17,9 @@ worlds: mystery and intrigue, with occasional moments of wonder when the mist cl
 
 Note: This mod requires the (soon to be merged) [OpenMW Post-Processing patch](https://gitlab.com/OpenMW/openmw/-/merge_requests/1124).
 
-*TODO*
+As with most mods, place the files into their own directory and point your `settings.cfg` at it.
+
+*TODO: More detailed instructions*
 
 ## Enabling the mod
 
@@ -27,8 +29,32 @@ Note: This mod requires the (soon to be merged) [OpenMW Post-Processing patch](h
 
 - Press the right arrow key to add it to the active effects list
 
+## Configuration
+
+The mod comes with a variety of configuration options. You can:
+
+- Change render quality (lower quality means higher performance)
+
+- Alter cloud density
+
+- Alter mist density
+
+- Toggle an additional 'swirling' effect that makes mist more realistic and interesting to watch
+
+- Toggle clouds on and off
+
+- Toggle whether the vanilla skybox is visible behind the clouds and mist
+
 ## Performance
 
 Performance may be an issue for some machines. The mod includes a variety of settings (available in the aforementioned
 F2 menu) that allow reducing the quality or disabling various features in order to improve performance. At minimum
 settings, even the lowest-powered machines *should* be able to run the mod.
+
+## Implementation
+
+- Both clouds and mist are rendered using raycasting, meaning that they are 3D elements of the environment: you can
+  walk through them and they swirl, shift, and move in real time.
+
+- Although all code is new to the mod, many aspects of the implementation are borrowed from my work on
+  [Veloren](https://veloren.net/)'s cloud shaders.
