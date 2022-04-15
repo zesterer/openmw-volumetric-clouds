@@ -86,29 +86,29 @@ fragment main {
             * mix(
                 1.0,
                 ((noise_3d(wpos / 1000 + time * 3) - 0.5) * 1.0 + 0.5) * 0.5,
-                1.0 / (1.0 + dist * 0.000000)
+                1.0 / (1.0 + dist * 0.0001)
             )
         ;
         return max(cloud, 0) / (1.0 + max(wpos.z - omw.waterHeight, 0) * 0.01);
     }
 
-    vec3 apply_fog(vec3 col, vec3 wpos, vec3 dir, float max_dist) {
+    vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float fog = 0.0;
         float dist = 1.0;
         int i = 0;
         while (dist < max_dist && i < 100) {
             float new_dist = min(dist * (1.0 + 1.0 / quality), max_dist);
 
-            fog += fog_at(omw.eyePos.xyz + dir * new_dist, new_dist) * (new_dist - dist);
+            fog += fog_at(omw.eyePos.xyz + dir * dist, new_dist) * (new_dist - dist);
 
             dist = new_dist;
             i += 1;
         }
 
         float fog_factor = 1.0 - 1.0 / (fog + 1.0);
-        vec3 fog_color = (vec3(omw.sunVis) + 0.3) * 0.75 * omw.fogColor.rgb;
+        vec3 fog_color = (vec3(omw.sunVis) + pow(max(dot(dir, omw.sunPos.xyz), 0), 4) + 0.3) * 0.75 * omw.fogColor.rgb;
 
-        return mix(col, fog_color, fog_factor);
+        return mix(col, vec4(fog_color, 1), fog_factor);
     }
 
     void main()
@@ -122,7 +122,8 @@ fragment main {
         vec3 dir = normalize(wpos - omw.eyePos.xyz);
 
         float max_dist = distance(omw.eyePos.xyz, wpos);
-        col.rgb = apply_fog(col.rgb, wpos, dir, max_dist);
+        max_dist = dir.z < 0 ? min(max_dist, (omw.eyePos.z - omw.waterHeight) / -dir.z) : max_dist;
+        col = apply_fog(col, wpos, dir, max_dist);
 
         omw_FragColor = col;
     }
@@ -133,5 +134,5 @@ technique {
     description = "Volumetric Clouds";
     author = "zesterer";
     version = "1.0";
-    flags = disable_interiors, disable_sunglare;
+    flags = disable_interiors, disable_underwater, disable_sunglare;
 }
