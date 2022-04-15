@@ -11,6 +11,16 @@ uniform_bool swirling {
     description = "An additional swirling effect for mist";
 }
 
+uniform_bool clouds {
+    default = true;
+    description = "Whether clouds are enabled or not";
+}
+
+uniform_bool replace_skybox {
+    default = true;
+    description = "Whether the default skybox is replaced";
+}
+
 sampler_2d noise {
     source = "textures/noise.png";
     mag_filter = linear;
@@ -51,7 +61,11 @@ fragment main {
 
         vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
         vec4 view_space = inv * clip_space;
-        return view_space.xyz / view_space.w;
+        if (depth < 0.0000001) {
+            return normalize(view_space.xyz) * 10000000;
+        } else {
+            return view_space.xyz / view_space.w;
+        }
     }
 
     #define M1 2047667443U
@@ -79,7 +93,7 @@ fragment main {
         );
     }
 
-    float fog_at(vec3 wpos, float dist) {
+    vec2 fog_at(vec3 wpos, float dist) {
         if (swirling) {
             wpos.xy += vec2(
                 noise_2d(wpos.xy * 0.0001) - 0.5,
@@ -87,7 +101,7 @@ fragment main {
             ) * 450;
         }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
-        float cloud = 0.3
+        float mist_nz = 0.3
             * noise_3d(wpos / 10000 - time * 0.3) * 0.2
             * mix(
                 1.0,
@@ -95,27 +109,72 @@ fragment main {
                 1.0 / (1.0 + dist * 0.00003)
             )
         ;
-        float fog_min = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.85) * 6000;
-        float fog_height = 5000;
-        return max(cloud, 0.0) * pow(clamp(1.0 - (wpos.z - fog_min) / fog_height, 0, 1), 5);
+        float mist_base = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.85) * 6000;
+        float mist_height = 5000;
+
+        float mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
+
+        float cloud_base = 0.0;
+        float cloud = 0.0;
+        float sun_access = 1.0;
+        if (clouds) {
+            cloud_base = omw.waterHeight + 550000
+                + (noise_2d(wpos.xy * 0.0000001 + time.xy * 0.03) - 0.5) * 600000
+                + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 50000;
+            cloud = pow(max(
+                noise_2d(wpos.xy / 5000000 - time.xy * 0.05) - 0.4
+                + (noise_3d(wpos / 1000000 + time * 0.1) - 0.5) * 0.5
+                + (noise_3d(wpos / 200000 - time * 0.1) - 0.5) * 0.1
+                , 0
+            ), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
+            sun_access -= min(cloud * 1000000, 1) * clamp((cloud_base - wpos.z) * 0.0000025
+                + (noise_2d(wpos.xy / 200000 - time.xy * 0.2) - 0.5) * 0.05
+                , -0.2, 0.2);
+        }
+
+        float attenuation = 0.00009 / (1.0 + wpos.z / 300);
+
+        return vec2(
+            mist + cloud + attenuation,
+            sun_access
+        );
     }
 
-    vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
-        vec3 sun_light = vec3(1) * max(omw.sunPos.z, 0.5) + pow(max(dot(dir, omw.sunPos.xyz), 0), 6) * 0.3;
-        vec3 moon_light = vec3(0.6, 0.8, 1.0) * max(-omw.sunPos.z, 0) * 0.15;
-        vec3 fog_color = (sun_light * omw.fogColor.rgb + moon_light);
+    vec3 sun_color = mix(
+        vec3(2, 0.3, 0) * 3,
+        vec3(0.6, 0.5, 0.0),
+        pow(max(omw.sunPos.z, 0), 0.2)
+    );
 
-        float dist = 1.0;
+    vec3 sky_color = mix(
+        mix(
+            vec3(1.2, 0.4, 0.2),
+            vec3(0.1, 0.13, 0.15),
+            pow(max(-omw.sunPos.z, 0), 0.2)
+        ),
+        vec3(0.6, 0.8, 1),
+        pow(max(omw.sunPos.z, 0), 0.5)
+    );
+
+    vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
+        float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
+        float moon_light = max(-omw.sunPos.z, 0) * 0.35;
+        float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 6) * 0.05;
+        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), 0.35) + direct_light * sun_color;
+
+        float step_factor = mix(0.5, 4, quality / 10);
+
+        float dist = max_dist;
         int i = 0;
-        while (dist < max_dist && i < 100) {
-            float new_dist = min(dist * (1.0 + 1.0 / quality), max_dist);
+        while (dist > 1 && i < 100) {
+            float new_dist = exp(floor(log(dist - 1) * step_factor) / step_factor);
 
             vec3 spos = omw.eyePos.xyz + dir * (new_dist + dist) * 0.5;
-            float fog = fog_at(spos, new_dist);
+            vec2 fog = fog_at(spos, new_dist);
 
-            float fog_factor = 1.0 - 1.0 / (fog * (new_dist - dist) + 1.0);
+            float fog_factor = 1.0 - 1.0 / (fog.x * (dist - new_dist) + 1.0);
 
-            col = mix(col, vec4(fog_color, 1), fog_factor);
+            col = mix(col, vec4(fog_color * fog.y, 1), fog_factor);
 
             dist = new_dist;
             i += 1;
@@ -124,8 +183,15 @@ fragment main {
         return col;
     }
 
-    void main()
-    {
+    vec3 sky_col(vec3 dir) {
+        vec3 diffuse = sky_color;
+        vec3 sun = clamp((dot(dir, omw.sunPos.xyz) - 1.0348) * 8, 0, 1) * sun_color * 800;
+        vec3 sun_glare = pow(max(dot(dir, omw.sunPos.xyz), 0), 8) * sun_color * 0.5;
+
+        return diffuse + sun + sun_glare;
+    }
+
+    void main() {
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
         float depth = omw_GetDepth(omw_SamplerDepth, omw_TexCoord);
 
@@ -133,9 +199,12 @@ fragment main {
 
         vec3 wpos = wpos_at(omw_TexCoord);
         vec3 dir = normalize(wpos - omw.eyePos.xyz);
-
         float max_dist = distance(omw.eyePos.xyz, wpos);
-        max_dist = dir.z < 0 ? min(max_dist, (omw.eyePos.z - omw.waterHeight) / -dir.z) : max_dist;
+
+        if (replace_skybox && max_dist > 250000) {
+            col.rgb = sky_col(dir);
+        }
+
         col = apply_fog(col, wpos, dir, max_dist);
 
         omw_FragColor = col;
