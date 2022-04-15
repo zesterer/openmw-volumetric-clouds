@@ -96,9 +96,9 @@ fragment main {
     vec2 fog_at(vec3 wpos, float dist) {
         if (swirling) {
             wpos.xy += vec2(
-                noise_2d(wpos.xy * 0.0001) - 0.5,
-                noise_2d(wpos.xy * 0.0001) - 0.5
-            ) * 450;
+                noise_2d(wpos.xy * 0.0005) - 0.5,
+                noise_2d(wpos.xy * 0.0005) - 0.5
+            ) * 350;
         }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float mist_nz = 0.2
