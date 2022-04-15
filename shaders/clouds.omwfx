@@ -134,8 +134,8 @@ fragment main {
                 + (noise_3d(wpos / 1000000 + time * 0.1) - 0.5) * 0.5
                 + (noise_3d(wpos / 200000 - time * 0.1) - 0.5) * 0.1
                 , 0
-            ), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
-            sun_access -= min(cloud * 1000000, 1) * clamp((cloud_base - wpos.z) * 0.0000025
+            ), 2) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
+            sun_access -= min(cloud * 1000000, 1) * clamp((cloud_base - wpos.z) * 0.0000035
                 + (noise_2d(wpos.xy / 300000 - time.xy * 0.2) - 0.5) * 0.1
                 , -0.2, 0.2);
         }
@@ -166,7 +166,7 @@ fragment main {
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
-        float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.2;
+        float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.1;
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), 0.35);
 
