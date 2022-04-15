@@ -84,16 +84,16 @@ fragment main {
         */
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float cloud = 1.0
-            * max(noise_3d(wpos / 300000 + time * 0.03) * 1.6 - 0.35, 0) * 0.2
             * noise_3d(wpos / 3000 - time * 0.3) * 0.2
             * mix(
                 1.0,
-                ((noise_3d(wpos / 1000 + time * 3) - 0.5) * 1.0 + 0.5) * 0.8,
+                ((noise_3d(wpos / 1000 + time * 2) - 0.5) * 1.3 + 0.5) * 0.4,
                 1.0 / (1.0 + dist * 0.00003)
             )
         ;
-        float fog_height = 3000 + noise_2d(wpos.xy * 0.00001) * 2000;
-        return max(cloud, 0) * pow(clamp(1.0 - (wpos.z - omw.waterHeight) / fog_height, 0, 1), 5);
+        float fog_min = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.85) * 6000;
+        float fog_height = 5000;
+        return max(cloud, 0) * pow(clamp(1.0 - (wpos.z - fog_min) / fog_height, 0, 1), 5);
     }
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
