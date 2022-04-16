@@ -83,13 +83,14 @@ fragment main {
             depth = 1 - depth;
         #endif
 
-        mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
+        //mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
+        mat4 inv = inverse(omw.projectionMatrix * omw.viewMatrix);
 
         vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
         vec4 view_space = inv * clip_space;
         view_space.xyz /= view_space.w;
         if (depth < 0.000001) {
-            return normalize(view_space.xyz) * 10000000 + omw.eyePos.xyz;
+            return normalize(view_space.xyz) * 10000000;
         } else {
             return view_space.xyz;
         }

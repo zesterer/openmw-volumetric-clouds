@@ -58,3 +58,7 @@ settings, even the lowest-powered machines *should* be able to run the mod.
 
 - Although all code is new to the mod, many aspects of the implementation are borrowed from my work on
   [Veloren](https://veloren.net/)'s cloud shaders.
+
+## Known issues
+
+- Rain is applied before post-processing shaders and don't write to the depth buffer, so clouds appear over rain drops
