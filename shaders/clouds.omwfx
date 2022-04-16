@@ -87,10 +87,11 @@ fragment main {
 
         vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
         vec4 view_space = inv * clip_space;
+        view_space.xyz /= view_space.w;
         if (depth < 0.000001) {
             return normalize(view_space.xyz) * 10000000 + omw.eyePos.xyz;
         } else {
-            return view_space.xyz / view_space.w;
+            return view_space.xyz;
         }
     }
 
@@ -193,6 +194,7 @@ fragment main {
 
         float dist = max_dist;
         float f = (log(dist) / step_factor)+1;
+        dist -= 1000; // Hack, makes mist appear at distance
         int i = 0;
         while (f > 1) {
             float new_dist = min(exp(f * step_factor), max_dist);
@@ -200,7 +202,7 @@ fragment main {
             vec3 spos = omw.eyePos.xyz + dir * mix(new_dist, dist, 0.5);
             vec2 fog = fog_at(spos, new_dist);
 
-            float fog_factor = 1.0 / (fog.x * (dist - new_dist) + 1.0);
+            float fog_factor = 1.0 / (fog.x * abs(dist - new_dist) + 1.0);
 
             col = mix(vec4(fog_color * fog.y, 1), col, fog_factor);
 
