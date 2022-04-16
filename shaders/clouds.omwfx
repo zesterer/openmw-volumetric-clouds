@@ -76,20 +76,19 @@ fragment main {
         return view_space.z / view_space.w;
     }
 
-    vec3 wpos_at(vec2 uv) {
-        float depth = omw_GetDepth(omw_SamplerDepth, uv);
+    highp vec3 wpos_at(vec2 uv) {
+        highp float depth = omw_GetDepth(omw_SamplerDepth, uv);
 
         #ifdef OMW_REVERSE_Z
             depth = 1 - depth;
         #endif
 
-        //mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
-        mat4 inv = inverse(omw.projectionMatrix * omw.viewMatrix);
+        highp mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
 
-        vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), depth, 1.0);
-        vec4 view_space = inv * clip_space;
+        highp vec4 clip_space = vec4(uv * 2.0 - 1.0, depth, 1.0);
+        highp vec4 view_space = inv * clip_space;
         view_space.xyz /= view_space.w;
-        if (depth < 0.000001) {
+        if (depth == 0) {
             return normalize(view_space.xyz) * 10000000;
         } else {
             return view_space.xyz;
@@ -105,11 +104,11 @@ fragment main {
         return float(n) * (1.0 / float(0xffffffffU));
     }
 
-    float noise_2d(vec2 pos) {
+    float noise_2d(highp vec2 pos) {
         return omw_Texture2D(noise, pos).x;
     }
 
-    float noise_3d(vec3 pos) {
+    float noise_3d(highp vec3 pos) {
         pos.z *= 15.0;
         uint z = uint(trunc(pos.z));
         vec2 offs0 = vec2(hash_one(z), hash_one(z + 73u));
@@ -121,14 +120,14 @@ fragment main {
         );
     }
 
-    vec2 fog_at(vec3 wpos, float dist) {
+    vec2 fog_at(highp vec3 wpos, float dist) {
         if (swirling) {
             wpos.xy += vec2(
                 noise_2d(wpos.xy * 0.0005) - 0.5,
                 noise_2d(wpos.xy * 0.0005) - 0.5
             ) * 250;
         }
-        vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
+        highp vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float mist_nz = 0.2 * mist_density
             * noise_3d(wpos / 10000 - time * 0.3) * 0.2
             * mix(
@@ -137,8 +136,8 @@ fragment main {
                 1.0 / (1.0 + dist * 0.00003)
             )
         ;
-        float mist_base = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.7) * 6000;
-        float mist_height = 5000;
+        highp float mist_base = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.7) * 6000;
+        highp float mist_height = 5000;
 
         float mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
 
@@ -151,8 +150,8 @@ fragment main {
                 + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 50000;
             float cloud_nz = cloud_density * (0.5 + 2
                 * ((noise_2d((wpos.xy - time.xy * 100000.05) / 5000000) - 0.5) * 10 + 0.5)
-                * ((noise_3d((wpos + time * 100000.05) / 500000) - 0.5) * 0.7 + 0.5)
-                * ((noise_3d((wpos - time * 100000.05) / 100000) - 0.5) * 0.2 + 0.5)
+                * ((noise_3d((wpos + time * 100000.05) / 500000) - 0.5) * 0.9 + 0.5)
+                * ((noise_3d((wpos - time * 100000.05) / 100000) - 0.5) * 0.3 + 0.5)
             );
             cloud = pow(max(cloud_nz, 0), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
             sun_access *= 1 - min(cloud * 1500000, 1) * clamp((cloud_base - wpos.z) * 0.0000035
@@ -185,7 +184,7 @@ fragment main {
         pow(max(omw.sunPos.z, 0), 0.5)
     );
 
-    vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
+    vec4 apply_fog(vec4 col, highp vec3 wpos, vec3 dir, highp float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
         float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, omw.sunPos.xyz), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.1;
@@ -193,14 +192,14 @@ fragment main {
 
         float step_factor = 1.0 / mix(0.75, 1, quality);
 
-        float dist = max_dist;
+        highp float dist = max_dist;
         float f = (log(dist) / step_factor)+1;
         dist -= 1000; // Hack, makes mist appear at distance
         int i = 0;
         while (f > 1) {
-            float new_dist = min(exp(f * step_factor), max_dist);
+            highp float new_dist = min(exp(f * step_factor), max_dist);
 
-            vec3 spos = omw.eyePos.xyz + dir * mix(new_dist, dist, 0.5);
+            highp vec3 spos = omw.eyePos.xyz + dir * mix(new_dist, dist, 0.5);
             vec2 fog = fog_at(spos, new_dist);
 
             float fog_factor = 1.0 / (fog.x * abs(dist - new_dist) + 1.0);
