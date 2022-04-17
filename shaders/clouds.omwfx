@@ -77,11 +77,10 @@ fragment main {
 
         vec4 clip_space = vec4(uv * 2.0 - 1.0, 1 - depth, 1.0);
         vec4 view_space = omw.invViewMatrix * (omw.invProjectionMatrix * clip_space);
-        view_space.xyz /= view_space.w;
         if (depth == 1) {
             return normalize(view_space.xyz) * 10000000;
         } else {
-            return view_space.xyz;
+            return view_space.xyz / view_space.w;
         }
     }
 
@@ -134,8 +133,8 @@ fragment main {
             cloud_base = omw.waterHeight + cloud_height
                 + (noise_2d(wpos.xy * 0.0000003 + time.xy * 0.03) - 0.5) * 300000
                 + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 100000;
-            float cloud_nz = cloud_density * (0.5 + 1
-                * ((noise_2d((wpos.xy - time.xy * 100000.0) / 4000000) - 0.5) * 10 + 0.5)
+            float cloud_nz = cloud_density * (0.4 + 1
+                * ((noise_2d((wpos.xy - time.xy * 100000.0) / 4000000) - 0.5) * 5 + 0.5)
                 * ((noise_3d((wpos + time * 50000.0) / 800000) - 0.5) * 1.5 + 0.5)
                 * ((noise_3d((wpos - time * 50000.0) / 100000) - 0.5) * 0.3 + 0.5)
             );
@@ -231,6 +230,7 @@ fragment main {
 
 technique {
     passes = main;
+    version = "0.1";
     description = "Volumetric Clouds";
     author = "zesterer";
     version = "1.0";
