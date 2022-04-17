@@ -137,12 +137,17 @@ fragment main {
             cloud_base = omw.waterHeight + cloud_height
                 + (noise_2d(wpos.xy * 0.0000003 + time.xy * 0.03) - 0.5) * 300000
                 + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 100000;
-            float cloud_nz = cloud_density * (0.2 + 1
-                * ((noise_2d((wpos.xy - time.xy * 100000.0) / 4000000) - 0.5) * 5 + 0.5)
-                * ((noise_3d((wpos + time * 50000.0) / 800000) - 0.5) * 1.5 + 0.5)
-                * ((noise_3d((wpos - time * 30000.0) / 100000) - 0.5) * 0.25 + 0.5)
-            );
-            cloud = pow(max(cloud_nz, 0), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
+            float cloud_nz = max((noise_2d((wpos.xy - time.xy * 100000.0) / 4000000) - 0.5) * 5 + 0.5, 0);
+            if (cloud_nz > 0) {
+                cloud_nz *= (noise_3d((wpos + time * 50000.0) / 800000) - 0.5) * 1.0 + 0.5;
+                if (cloud_nz > 0) {
+                    cloud_nz *= (noise_3d((wpos - time * 30000.0) / 100000) - 0.5) * 0.25 + 0.5;
+                    if (cloud_nz > 0) {
+                        cloud_nz *= (noise_3d((wpos - time * 30000.0) / 20000) - 0.5) * 0.1 + 0.5;
+                    }
+                }
+            }
+            cloud = cloud_density * pow(max(0.2 + cloud_nz, 0), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
             sun_access *= 1 - min(cloud * 1500000, 1) * clamp((cloud_base - wpos.z) * 0.0000035
                 + (noise_2d(wpos.xy / 500000 - time.xy * 0.2) - 0.5) * 0.1
                 + (noise_3d(wpos / 200000 - time * 0.2) - 0.5) * 0.1
