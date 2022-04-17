@@ -60,13 +60,11 @@ fragment main {
     uniform sampler2D omw_SamplerLastShader;
     uniform sampler2D omw_SamplerDepth;
 
-    #define HORIZON 500000.0
+    #define HORIZON 10000000
 
     float dist_at(vec2 uv) {
         float depth = omw_GetDepth(omw_SamplerDepth, uv);
-
         mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
-
         vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), 1 - depth, 1.0);
         vec4 view_space = inv * clip_space;
         return view_space.z / view_space.w;
@@ -74,13 +72,13 @@ fragment main {
 
     vec3 wpos_at(vec2 uv) {
         float depth = omw_GetDepth(omw_SamplerDepth, uv);
-
         vec4 clip_space = vec4(uv * 2.0 - 1.0, 1 - depth, 1.0);
-        vec4 view_space = omw.invViewMatrix * (omw.invProjectionMatrix * clip_space);
         if (depth == 1) {
-            return normalize(view_space.xyz) * 10000000;
+            vec4 world_space = omw.invViewMatrix * ((omw.invProjectionMatrix * clip_space) * vec4(1, 1, 1, 0));
+            return normalize(world_space.xyz) * HORIZON;
         } else {
-            return view_space.xyz / view_space.w;
+            vec4 world_space = omw.invViewMatrix * (omw.invProjectionMatrix * clip_space);
+            return world_space.xyz / world_space.w;
         }
     }
 
@@ -110,6 +108,7 @@ fragment main {
     }
 
     vec2 fog_at(vec3 wpos, float dist) {
+        wpos.z = max(wpos.z, 0);
         if (swirling) {
             wpos.xy += vec2(
                 noise_2d(wpos.xy * 0.0005) - 0.5,
@@ -181,7 +180,8 @@ fragment main {
         float f = (log(dist) / step_factor) + 1;
         dist -= max_dist * 0.1; // Hack, makes mist appear at distance
         float total_fog = 0;
-        while (f > 1) {
+        int i = 0;
+        while (f > 1 && i++ < 100) {
             float new_dist = min(exp(f * step_factor), max_dist);
 
             vec3 spos = omw.eyePos.xyz + dir * mix(new_dist, dist, 0.5);
