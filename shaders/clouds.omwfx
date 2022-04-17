@@ -37,12 +37,17 @@ uniform_bool swirling {
 
 uniform_bool clouds {
     default = true;
-    description = "Whether clouds are enabled or not";
+    description = "Enable high-altitude clouds";
 }
 
 uniform_bool replace_skybox {
     default = false;
-    description = "Whether the default skybox is replaced";
+    description = "Override the default skybox";
+}
+
+uniform_bool better_sun {
+    default = true;
+    description = "Enable better sun rendering";
 }
 
 sampler_2d noise {
@@ -218,7 +223,9 @@ fragment main {
             if (replace_skybox) {
                 col.rgb = sky_color;
             }
-            col.rgb += sun_light(dir);
+            if (better_sun) {
+                col.rgb += sun_light(dir);
+            }
         }
 
         col = apply_fog(col, wpos, dir, max_dist);
