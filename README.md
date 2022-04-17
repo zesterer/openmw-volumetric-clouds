@@ -7,11 +7,11 @@ distances are great, but they ruin the sense of immersion and mystery. Equally, 
 opposite problem: you never get the opportunity to see the sights. With this mod, you'll experience the best of both
 worlds: mystery and intrigue, with occasional moments of wonder when the mist clears and you can see for miles.
 
-[![A view over Vivec, looking north-east](https://i.imgur.com/UH4TMey.png)](https://www.youtube.com/watch?v=60jWROy5Pdg)
-[![Mist outside Vivec](https://i.imgur.com/eUuck8r.png)](https://www.youtube.com/watch?v=60jWROy5Pdg)
-[![Volumetric clouds in the distance over Red Mountain](https://i.imgur.com/SaoByZR.png)](https://www.youtube.com/watch?v=60jWROy5Pdg)
-[![Dawn in Vivec](https://i.imgur.com/C7Sm02j.png)](https://www.youtube.com/watch?v=60jWROy5Pdg)
-[![A misty night in Seyda Neen](https://i.imgur.com/c2NTbez.png)](https://www.youtube.com/watch?v=60jWROy5Pdg)
+[![A view over Vivec, looking north-east](https://i.imgur.com/UH4TMey.png)](https://youtu.be/CwzaRQRjlcU)
+[![Mist outside Vivec](https://i.imgur.com/eUuck8r.png)](https://youtu.be/CwzaRQRjlcU)
+[![Volumetric clouds in the distance over Red Mountain](https://i.imgur.com/SaoByZR.png)](https://youtu.be/CwzaRQRjlcU)
+[![Dawn in Vivec](https://i.imgur.com/C7Sm02j.png)](https://youtu.be/CwzaRQRjlcU)
+[![A misty night in Seyda Neen](https://i.imgur.com/c2NTbez.png)](https://youtu.be/CwzaRQRjlcU)
 
 ## Installing the mod
 
