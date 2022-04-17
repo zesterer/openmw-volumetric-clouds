@@ -41,7 +41,7 @@ uniform_bool clouds {
 }
 
 uniform_bool replace_skybox {
-    default = true;
+    default = false;
     description = "Whether the default skybox is replaced";
 }
 
