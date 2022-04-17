@@ -202,7 +202,7 @@ fragment main {
         const float frac = 0.002;
         vec3 sun_dir = normalize(omw.sunPos.xyz);
         vec3 sun = clamp(pow((dot(dir, sun_dir) - (1.0 - frac)) / frac, 10) * 1, 0, 1) * sun_color * 5;
-        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0), 8) * sun_color * 0.3;
+        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0), 8) * sun_color * 3.0;
 
         return sun + sun_glare;
     }
@@ -214,12 +214,11 @@ fragment main {
         float max_dist = distance(omw.eyePos.xyz, wpos);
         vec3 dir = (wpos - omw.eyePos.xyz) / max_dist;
 
-        if (max_dist > 250000) {
+        if (max_dist >= HORIZON * 0.9) {
             if (replace_skybox) {
                 col.rgb = sky_color;
-                // TODO: Apply this on top of skybox when there's a way to disable the old sun
-                col.rgb += sun_light(dir);
             }
+            col.rgb += sun_light(dir);
         }
 
         col = apply_fog(col, wpos, dir, max_dist);
