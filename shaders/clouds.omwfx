@@ -132,10 +132,10 @@ fragment main {
             cloud_base = omw.waterHeight + cloud_height
                 + (noise_2d(wpos.xy * 0.0000003 + time.xy * 0.03) - 0.5) * 300000
                 + (noise_2d(wpos.xy * 0.000001 + time.xy * 0.03) - 0.5) * 100000;
-            float cloud_nz = cloud_density * (0.4 + 1
+            float cloud_nz = cloud_density * (0.2 + 1
                 * ((noise_2d((wpos.xy - time.xy * 100000.0) / 4000000) - 0.5) * 5 + 0.5)
                 * ((noise_3d((wpos + time * 50000.0) / 800000) - 0.5) * 1.5 + 0.5)
-                * ((noise_3d((wpos - time * 50000.0) / 100000) - 0.5) * 0.3 + 0.5)
+                * ((noise_3d((wpos - time * 30000.0) / 100000) - 0.5) * 0.25 + 0.5)
             );
             cloud = pow(max(cloud_nz, 0), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
             sun_access *= 1 - min(cloud * 1500000, 1) * clamp((cloud_base - wpos.z) * 0.0000035
@@ -172,7 +172,7 @@ fragment main {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
         float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.3;
-        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), 0.35);
+        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), max(omw.sunPos.z, 0.3));
 
         float step_factor = 1.0 / mix(0.75, 1, quality);
 
@@ -202,7 +202,7 @@ fragment main {
         const float frac = 0.002;
         vec3 sun_dir = normalize(omw.sunPos.xyz);
         vec3 sun = clamp(pow((dot(dir, sun_dir) - (1.0 - frac)) / frac, 10) * 1, 0, 1) * sun_color * 5;
-        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0), 8) * sun_color * 1.0;
+        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0), 8) * sun_color * 0.5;
 
         return sun + sun_glare;
     }
