@@ -38,9 +38,17 @@ uniform_float mist_height {
     description = "Base height of mist around the water level";
 }
 
+uniform_float mist_speed {
+    default = 1;
+    min = 0;
+    max = 5;
+    step = 0.1;
+    description = "The speed that mist moves through the world";
+}
+
 uniform_bool swirling {
     default = false;
-    description = "An additional swirling effect for mist";
+    description = "An additional swirling effect to mist";
 }
 
 uniform_bool clouds {
@@ -130,8 +138,8 @@ fragment main {
         }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float mist_nz = mist_density * (0.01
-            * ((noise_3d((wpos - time * 2000) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
-            * (0.5 - abs(noise_3d((wpos + time * 3000) / 2000) - 0.5) * 0.35) * 0.4
+            * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
+            * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35) * 0.4
         );
         float mist_base = omw.waterHeight + mist_height + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.6) * 8000;
         float mist_height = 5000;
