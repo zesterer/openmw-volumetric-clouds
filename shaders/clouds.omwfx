@@ -30,6 +30,14 @@ uniform_float mist_density {
     description = "Density of mist";
 }
 
+uniform_float mist_height {
+    default = 0;
+    min = -8000;
+    max = 8000;
+    step = 250;
+    description = "Base height of mist around the water level";
+}
+
 uniform_bool swirling {
     default = false;
     description = "An additional swirling effect for mist";
@@ -125,7 +133,7 @@ fragment main {
             * ((noise_3d((wpos - time * 2000) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
             * (0.5 - abs(noise_3d((wpos + time * 3000) / 2000) - 0.5) * 0.35) * 0.4
         );
-        float mist_base = omw.waterHeight + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.6) * 8000;
+        float mist_base = omw.waterHeight + mist_height + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.6) * 8000;
         float mist_height = 5000;
 
         float mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
@@ -245,5 +253,6 @@ technique {
     description = "Volumetric Clouds";
     author = "zesterer";
     version = "1.0";
+    hdr = true;
     flags = disable_interiors, disable_underwater, disable_sunglare;
 }
