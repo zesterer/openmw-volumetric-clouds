@@ -13,7 +13,19 @@ worlds: mystery and intrigue, with occasional moments of wonder when the mist cl
 [![Dawn in Vivec](https://i.imgur.com/C7Sm02j.png)](https://youtu.be/CwzaRQRjlcU)
 [![A misty night in Seyda Neen](https://i.imgur.com/c2NTbez.png)](https://youtu.be/CwzaRQRjlcU)
 
-## Installing the mod
+## Recommendations
+
+- This mod works well with my [shader set](https://github.com/zesterer/openmw-shaders).
+- [Enable distant terrain](https://openmw.readthedocs.io/en/stable/reference/modding/settings/terrain.html#distant-terrain)
+- Whack the [viewing distance](https://openmw.readthedocs.io/en/stable/reference/modding/settings/camera.html#viewing-distance)
+  up as high as it can go. I use a view distance of 300,000.
+- Ensure that [distant fog](https://openmw.readthedocs.io/en/stable/reference/modding/settings/fog.html#use-distant-fog)
+  is disabled (this mod supersedes it)
+- Enable the FXAA post-processing shader (make sure that it comes *after* clouds in the render order)
+- Disable or reduce [MSAA](https://openmw.readthedocs.io/en/stable/reference/modding/settings/video.html#antialiasing)
+  (post-processing effects do not play well with it, so you're usually better off just using FXAA)
+
+## Installing
 
 Note: This mod requires the (soon to be merged) [OpenMW Post-Processing patch](https://gitlab.com/OpenMW/openmw/-/merge_requests/1124).
 
