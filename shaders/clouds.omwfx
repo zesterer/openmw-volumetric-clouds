@@ -260,7 +260,6 @@ technique {
     version = "0.1";
     description = "Volumetric Clouds";
     author = "zesterer";
-    version = "1.0";
     hdr = true;
     flags = disable_interiors, disable_underwater, disable_sunglare;
 }
