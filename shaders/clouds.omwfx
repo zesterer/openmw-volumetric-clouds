@@ -111,12 +111,12 @@ fragment main {
         }
     }
 
-    #define M1 2047667443U
-    #define M2 3883706873U
-    #define M3 3961281721U
+    #define M1 2047667443
+    #define M2 3883706873
+    #define M3 3961281721
 
-    float hash_one(uint q) {
-        uint n = ((M3 * q) ^ M2) * M1;
+    float hash_one(int q) {
+        int n = ((M3 * q) ^ M2) * M1;
         return float(n) * (1.0 / float(0xffffffffU));
     }
 
@@ -126,9 +126,9 @@ fragment main {
 
     float noise_3d(vec3 pos) {
         pos.z *= 15.0;
-        uint z = uint(trunc(pos.z));
-        vec2 offs0 = vec2(hash_one(z), hash_one(z + 73u));
-        vec2 offs1 = vec2(hash_one(z + 1u), hash_one(z + 1u + 73u));
+        int z = int(trunc(pos.z));
+        vec2 offs0 = vec2(hash_one(z), hash_one(z + 73));
+        vec2 offs1 = vec2(hash_one(z + 1), hash_one(z + 1 + 73));
         return mix(
             noise_2d(pos.xy + offs0),
             noise_2d(pos.xy + offs1),
