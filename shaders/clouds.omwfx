@@ -126,7 +126,7 @@ fragment main {
 
     float noise_3d(vec3 pos) {
         pos.z *= 15.0;
-        int z = int(trunc(pos.z));
+        int z = int(floor(pos.z));
         vec2 offs0 = vec2(hash_one(z), hash_one(z + 73));
         vec2 offs1 = vec2(hash_one(z + 1), hash_one(z + 1 + 73));
         return mix(
