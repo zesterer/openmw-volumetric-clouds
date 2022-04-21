@@ -23,7 +23,7 @@ uniform_float cloud_height {
 }
 
 uniform_float mist_density {
-    default = 0.5;
+    default = 0.25;
     min = 0.0;
     max = 1.0;
     step = 0.05;
@@ -47,9 +47,9 @@ uniform_float mist_speed {
 }
 
 uniform_float mist_detail {
-    default = 1;
+    default = 0.5;
     min = 0;
-    max = 2;
+    max = 1.5;
     step = 0.1;
     description = "Detailing visible in mist. If you experience rippling, turn this down";
 }
@@ -208,23 +208,28 @@ fragment main {
         float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.3;
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), max(omw.sunPos.z, 0.3));
 
+        vec3 fog_light = fog_color + direct_light * sun_color;
+
         float step_factor = 1.0 / mix(0.75, 1, quality);
 
         float dist = max_dist;
-        float f = (log(dist) / step_factor) + 1;
-        dist -= max_dist * 0.1; // Hack, makes mist appear at distance
-        float total_fog = 0;
+        float f = log(dist) / step_factor + 1;
+
+        // Initial
+        vec2 ifog = fog_at(omw.eyePos.xyz + dir * max_dist, max_dist);
+        ifog.x *= pow(abs(dir.z), 2);
+        col.rgb = mix(fog_light * ifog.y, col.rgb, pow(0.9999, abs(exp(f * step_factor) - max_dist) * ifog.x * 10000));
+
+        // Loop
+        f = floor(f);
         int i = 0;
         while (f > 1 && i++ < 100) {
             float new_dist = min(exp(f * step_factor), max_dist);
 
-            vec3 spos = omw.eyePos.xyz + dir * mix(new_dist, dist, 0.5);
-            vec2 fog = fog_at(spos, new_dist);
+            vec2 fog = fog_at(omw.eyePos.xyz + dir * new_dist, dist);
 
-            vec3 fog_col = fog_color + direct_light * sun_color;
-            col.rgb = mix(fog_col * fog.y, col.rgb, pow(0.9999, abs(dist - new_dist) * fog.x * 10000));
+            col.rgb = mix(fog_light * fog.y, col.rgb, pow(0.9999, abs(dist - new_dist) * fog.x * 10000));
 
-            total_fog += fog.y;
             dist = new_dist;
             f -= 1;
         }
