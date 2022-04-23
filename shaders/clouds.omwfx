@@ -80,6 +80,9 @@ sampler_2d noise {
     min_filter = linear;
     wrap_s = repeat;
     wrap_t = repeat;
+    source_format = red;
+    internal_format = red;
+    source_type = unsigned_byte;
 }
 
 fragment main {
