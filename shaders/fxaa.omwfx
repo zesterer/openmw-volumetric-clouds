@@ -6,7 +6,7 @@ uniform_float fxaa_scale {
     description = "The scale at which FXAA performs edge detection";
 }
 
-fragment main {
+fragment fxaa {
     const float FXAA_REDUCE_MIN = 1.0/ 128.0;
     const float FXAA_REDUCE_MUL = 1.0 / 8.0;
     const float FXAA_SPAN_MAX = 8.0;
@@ -92,15 +92,13 @@ fragment main {
 
     omw_In vec2 omw_TexCoord;
 
-    uniform sampler2D omw_SamplerLastShader;
-
     void main() {
         omw_FragColor = aa_apply(omw_SamplerLastShader, omw_TexCoord * omw.resolution, omw.resolution);
     }
 }
 
 technique {
-    passes = main;
+    passes = fxaa;
     version = "0.1";
     description = "Apply FXAA to the final image";
     author = "zesterer";

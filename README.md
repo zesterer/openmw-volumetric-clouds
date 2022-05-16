@@ -27,8 +27,6 @@ worlds: mystery and intrigue, with occasional moments of wonder when the mist cl
 
 ## Installing
 
-Note: This mod requires the (soon to be merged) [OpenMW Post-Processing patch](https://gitlab.com/OpenMW/openmw/-/merge_requests/1124).
-
 As with most mods, place the files into their own directory and point your `settings.cfg` at it.
 
 *TODO: More detailed instructions*

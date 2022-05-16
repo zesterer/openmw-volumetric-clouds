@@ -89,13 +89,10 @@ fragment main {
 
     omw_In vec2 omw_TexCoord;
 
-    uniform sampler2D omw_SamplerLastShader;
-    uniform sampler2D omw_SamplerDepth;
-
     #define HORIZON 10000000
 
     float dist_at(vec2 uv) {
-        float depth = omw_GetDepth(omw_SamplerDepth, uv);
+        float depth = omw_GetDepth(uv);
         mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
         vec4 clip_space = vec4((uv * 2.0 - 1.0) * vec2(1, 1), 1 - depth, 1.0);
         vec4 view_space = inv * clip_space;
@@ -103,7 +100,7 @@ fragment main {
     }
 
     vec3 wpos_at(vec2 uv) {
-        float depth = omw_GetDepth(omw_SamplerDepth, uv);
+        float depth = omw_GetDepth(uv);
         vec4 clip_space = vec4(uv * 2.0 - 1.0, 1 - depth, 1.0);
         if (depth == 1) {
             vec4 world_space = omw.invViewMatrix * ((omw.invProjectionMatrix * clip_space) * vec4(1, 1, 1, 0));
@@ -114,9 +111,9 @@ fragment main {
         }
     }
 
-    #define M1 2047667443
-    #define M2 3883706873
-    #define M3 3961281721
+    #define M1 204766743
+    #define M2 388370683
+    #define M3 396128171
 
     float hash_one(int q) {
         int n = ((M3 * q) ^ M2) * M1;
