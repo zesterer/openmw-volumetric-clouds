@@ -27,9 +27,22 @@ worlds: mystery and intrigue, with occasional moments of wonder when the mist cl
 
 ## Installing
 
-As with most mods, place the files into their own directory and point your `settings.cfg` at it.
+*Ensure that you have the [latest development build](https://openmw.org/downloads/) of OpenMW. If you find that the mod
+does not work with the latest development build, please open an issue!*
 
-*TODO: More detailed instructions*
+1. [Download the shaders](https://github.com/zesterer/openmw-volumetric-clouds/archive/refs/heads/main.zip).
+
+2. Extract the shaders somewhere. I'd strongly suggest extracting next to your `openmw.cfg` file.
+
+3. Add a `data` entry to your `openmw.cfg`, as with most asset mods:
+
+```
+data = "path/to/openmw-volumetric-clouds"
+```
+
+(Ensure that the `openmw-volumetric-clouds` directory contains the `shaders` and `textures` directories)
+
+4. Start OpenMW and have fun!
 
 ## Enabling the mod
 
