@@ -42,15 +42,17 @@ data = "path/to/openmw-volumetric-clouds"
 
 (Ensure that the `openmw-volumetric-clouds` directory contains the `shaders` and `textures` directories)
 
-4. Start OpenMW and have fun!
+4. Enable [post-processing shaders](https://openmw.readthedocs.io/en/latest/reference/modding/settings/postprocessing.html#enabled) in your `settings.cfg`.
+
+5. Start OpenMW and have fun!
 
 ## Enabling the mod
 
-- Press F2 to open the in-game post-processing menu
+1. Press F2 to open the in-game post-processing menu
 
-- Click on 'clouds'
+2. Click on 'clouds'
 
-- Press the right arrow key to add it to the active effects list
+3. Press shift + right arrow key to add it to the active effects list
 
 ## Configuration
 
