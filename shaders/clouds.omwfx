@@ -89,7 +89,7 @@ fragment main {
 
     omw_In vec2 omw_TexCoord;
 
-    #define HORIZON 10000000
+    #define HORIZON 100000000
 
     float dist_at(vec2 uv) {
         float depth = omw_GetDepth(uv);
@@ -181,7 +181,7 @@ fragment main {
         float attenuation = 0.00009 / (1.0 + wpos.z / 300);
 
         return vec2(
-            mist + cloud + attenuation,
+            mist + cloud,// + attenuation,
             sun_access
         );
     }
@@ -226,9 +226,13 @@ fragment main {
         while (f > 1 && i++ < 100) {
             float new_dist = min(exp(f * step_factor), max_dist);
 
-            vec2 fog = fog_at(omw.eyePos.xyz + dir * new_dist, dist);
+            vec3 spos = omw.eyePos.xyz + dir * new_dist;
+            vec2 fog = fog_at(spos, dist);
 
             col.rgb = mix(fog_light * fog.y, col.rgb, pow(0.9999, abs(dist - new_dist) * fog.x * 10000));
+
+            // Rayleigh scattering
+            col.rgb = mix(col.rgb, sky_color, (1.0 - 1.0 / (1.0 + abs(dist - new_dist) * 0.000015)) * clamp((20000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
