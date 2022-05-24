@@ -74,6 +74,14 @@ uniform_bool better_sun {
     description = "Enable better sun rendering";
 }
 
+uniform_float point_glow_strength {
+    default = 0.25;
+    min = 0.0;
+    max = 1.0;
+    step = 0.05;
+    description = "Strength of glow around point lights";
+}
+
 sampler_2d noise {
     source = "textures/noise.png";
     mag_filter = linear;
@@ -211,7 +219,7 @@ fragment main {
         mix(
             vec3(1.2, 0.4, 0.2),
             vec3(0.01, 0.05, 0.15),
-            pow(max(-omw.sunPos.z, 0), 0.2)
+            pow(max(-omw.sunPos.z + 0.3, 0), 0.2)
         ),
         vec3(0.6, 0.8, 1),
         pow(max(omw.sunPos.z, 0), 0.5)
@@ -265,6 +273,35 @@ fragment main {
         return sun + sun_glare;
     }
 
+    float attenuation_strength_real(vec3 rpos) {
+        float d2 = rpos.x * rpos.x + rpos.y * rpos.y + rpos.z * rpos.z;
+        return 1.0 / (100.0 + d2);
+    }
+
+    vec3 apply_point_glow(vec3 wpos, vec3 dir, float max_dist, vec3 color) {
+        for (int i = 0; i < omw_GetPointLightCount(); i ++) {
+            vec3 light_pos = (omw.invViewMatrix * vec4(omw_GetPointLightViewPos(i), 1.0)).xyz;
+            // Project light_pos to dir line
+            float t = max(dot(light_pos - wpos, dir), 0);
+            vec3 nearest = wpos + dir * min(t, max_dist);
+
+            vec3 difference = light_pos - nearest;
+            float distance_2 = dot(difference, difference);
+
+            const float spread = 0.2;
+
+            float strength = pow(attenuation_strength_real(difference), spread)
+                * 0.04
+                * point_glow_strength
+                * max(0.0, 1.0 - sqrt(distance_2) / omw_GetPointLightRadius(i));
+
+            vec3 light_color = omw_GetPointLightDiffuse(i) * 100.0 * strength;
+
+            color += light_color;
+        }
+        return color;
+    }
+
     void main() {
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
 
@@ -281,7 +318,13 @@ fragment main {
             }
         }
 
-        col = apply_fog(col, wpos, dir, max_dist);
+        if (!omw.isInterior) {
+            col = apply_fog(col, wpos, dir, max_dist);
+        }
+
+        if (point_glow_strength > 0.0) {
+            col.rgb = apply_point_glow(omw.eyePos.xyz, dir, max_dist, col.rgb);
+        }
 
         omw_FragColor = col;
     }
@@ -293,5 +336,6 @@ technique {
     description = "Volumetric Clouds";
     author = "zesterer";
     hdr = true;
-    flags = disable_interiors, disable_underwater, disable_sunglare;
+    flags = disable_underwater, disable_sunglare;
+    pass_lights = true;
 }
