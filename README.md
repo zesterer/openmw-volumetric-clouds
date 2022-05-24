@@ -48,11 +48,13 @@ data = "path/to/openmw-volumetric-clouds"
 
 ## Enabling the mod
 
-1. Press F2 to open the in-game post-processing menu
+1. Open the in-game 'Options' menu and enable 'Post Processing' in the 'Video' tab.
 
-2. Click on 'clouds'
+2. Press F2 to open the in-game post-processing menu
 
-3. Press shift + right arrow key to add it to the active effects list
+3. Click on 'clouds'
+
+4. Press shift + right arrow key to add it to the active effects list
 
 ## Configuration
 
