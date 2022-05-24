@@ -192,6 +192,21 @@ fragment main {
         pow(max(omw.sunPos.z, 0), 0.1)
     );
 
+    vec3 weather_tone(int weather) {
+        switch (omw.weatherID) {
+            case 1: return vec3(0.8);
+            case 2: return vec3(0.65);
+            case 3: return vec3(0.5);
+            case 4: return vec3(0.5);
+            case 5: return vec3(0.5);
+            case 6: return vec3(1.0, 0.5, 0.25);
+            case 7: return vec3(1.0, 0.5, 0.5);
+            default: return vec3(1.0);
+        }
+    }
+
+    vec3 sky_tone = mix(weather_tone(omw.weatherID), weather_tone(omw.nextWeatherID), omw.weatherTransition);
+
     vec3 sky_color = mix(
         mix(
             vec3(1.2, 0.4, 0.2),
@@ -200,13 +215,13 @@ fragment main {
         ),
         vec3(0.6, 0.8, 1),
         pow(max(omw.sunPos.z, 0), 0.5)
-    );
+    ) * sky_tone;
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
         float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.3;
-        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, vec3(1), max(omw.sunPos.z, 0.3));
+        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, sky_tone, max(omw.sunPos.z, 0.3));
 
         vec3 fog_light = fog_color + direct_light * sun_color;
 
