@@ -100,6 +100,11 @@ uniform_bool point_glow_diffusion {
     description = "Whether mist and clouds should influence point glow (may be expensive)";
 }
 
+uniform_bool clamp_point_glow {
+    default = true;
+    description = "Whether point glow is clamped to the radius of the light (may reduce artifacts)";
+}
+
 sampler_2d noise {
     source = "textures/noise.png";
     mag_filter = linear;
@@ -320,7 +325,7 @@ fragment main {
             float distance_2 = dot(difference, difference);
 
             float spread = 0.6;
-            if (point_glow_diffusion) {
+            if (point_glow_diffusion && !omw.isInterior) {
                 spread /= 1.0 + fog_at(light_pos, min(t, max_dist)).x * 200.0;
             }
 
@@ -328,6 +333,10 @@ fragment main {
                 * 0.5
                 * point_glow_strength
                 * max(1.0 - t * 0.0002, 0.0);
+
+            if (clamp_point_glow) {
+                strength *= max(0.0, 1.0 - distance_2 / pow(omw_GetPointLightRadius(i), 2.0));
+            }
 
             vec3 light_color = omw_GetPointLightDiffuse(i) * 100.0 * strength;
 
