@@ -105,6 +105,11 @@ uniform_bool clamp_point_glow {
     description = "Whether point glow is clamped to the radius of the light (may reduce artifacts)";
 }
 
+uniform_bool dithering_enabled {
+    default = false;
+    description = "Whether dithering is enabled, reducing color banding";
+}
+
 sampler_2d noise {
     source = "textures/noise.png";
     mag_filter = linear;
@@ -345,6 +350,10 @@ fragment main {
         return color;
     }
 
+    vec3 rand(vec2 n) {
+        return fract(sin(vec3(1.0, 3.0, 7.0) * dot(n, vec2(12.9898, 4.1414))) * 43758.5453);
+    }
+
     void main() {
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
 
@@ -368,6 +377,10 @@ fragment main {
 
         if (point_glow_strength > 0.0) {
             col.rgb = apply_point_glow(omw.eyePos.xyz, dir, max_dist, col.rgb);
+        }
+
+        if (dithering_enabled) {
+            col.rgb += rand(omw_TexCoord * 1000.0) * 2.0 / 255.0;
         }
 
         omw_FragColor = col;
