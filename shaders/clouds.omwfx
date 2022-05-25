@@ -244,7 +244,7 @@ fragment main {
     vec3 sky_color = mix(
         mix(
             vec3(1.2, 0.4, 0.2),
-            vec3(0.01, 0.05, 0.15),
+            vec3(0.01, 0.05, 0.1),
             pow(max(-omw.sunPos.z + 0.2, 0), 0.2)
         ),
         vec3(0.8, 0.9, 1),
