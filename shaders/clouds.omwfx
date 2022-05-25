@@ -109,7 +109,12 @@ fragment main {
 
     vec3 wpos_at(vec2 uv) {
         float depth = omw_GetDepth(uv);
-        vec4 clip_space = vec4(uv * 2.0 - 1.0, 1 - depth, 1.0);
+        #if (OMW_REVERSE_Z == 1)
+            depth = 1.0 - depth;
+        #else
+            depth = depth * 2.0 - 1.0;
+        #endif
+        vec4 clip_space = vec4(uv * 2.0 - 1.0, depth, 1.0);
         if (depth == 1) {
             vec4 world_space = omw.invViewMatrix * ((omw.invProjectionMatrix * clip_space) * vec4(1, 1, 1, 0));
             return normalize(world_space.xyz) * HORIZON;
@@ -123,10 +128,15 @@ fragment main {
     #define M2 388370683
     #define M3 396128171
 
+    // Replace this function with the one below it if your GPU can't handle bitwise ops
     float hash_one(int q) {
         int n = ((M3 * q) ^ M2) * M1;
         return float(n) * (1.0 / float(0xffffffffU));
     }
+
+    //float hash_one(int q) {
+    //    return fract(sin(float(q)) * 43758.5453123);
+    //}
 
     float noise_2d(vec2 pos) {
         return omw_Texture2D(noise, pos).x;
@@ -219,7 +229,7 @@ fragment main {
         mix(
             vec3(1.2, 0.4, 0.2),
             vec3(0.01, 0.05, 0.15),
-            pow(max(-omw.sunPos.z + 0.3, 0), 0.2)
+            pow(max(-omw.sunPos.z + 0.2, 0), 0.2)
         ),
         vec3(0.6, 0.8, 1),
         pow(max(omw.sunPos.z, 0), 0.5)
