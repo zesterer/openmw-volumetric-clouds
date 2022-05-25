@@ -223,7 +223,7 @@ fragment main {
     vec3 sun_color = mix(
         vec3(2, 0.3, 0) * 3,
         vec3(0.6, 0.5, 0.0),
-        pow(max(omw.sunPos.z, 0), 0.1)
+        pow(max(omw.sunPos.z + 0.2, 0), 0.1)
     );
 
     vec3 weather_tone(int weather) {
