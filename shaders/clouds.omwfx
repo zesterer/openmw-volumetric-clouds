@@ -95,6 +95,11 @@ uniform_float point_glow_strength {
     description = "Strength of glow around point lights";
 }
 
+uniform_bool point_glow_diffusion {
+    default = true;
+    description = "Whether mist and clouds should influence point glow (may be expensive)";
+}
+
 sampler_2d noise {
     source = "textures/noise.png";
     mag_filter = linear;
@@ -314,12 +319,15 @@ fragment main {
             vec3 difference = light_pos - nearest;
             float distance_2 = dot(difference, difference);
 
-            const float spread = 0.2;
+            float spread = 0.6;
+            if (point_glow_diffusion) {
+                spread /= 1.0 + fog_at(light_pos, min(t, max_dist)).x * 200.0;
+            }
 
             float strength = pow(attenuation_strength_real(difference), spread)
-                * 0.05
+                * 0.5
                 * point_glow_strength
-                * max(0.0, 1.0 - sqrt(distance_2) / omw_GetPointLightRadius(i));
+                * max(1.0 - t * 0.0002, 0.0);
 
             vec3 light_color = omw_GetPointLightDiffuse(i) * 100.0 * strength;
 
