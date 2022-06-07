@@ -96,7 +96,7 @@ uniform_float point_glow_strength {
 }
 
 uniform_float point_glow_min_fade_dist {
-    default = 30.0;
+    default = 50.0;
     min = 0.0;
     max = 1024.0;
     step = 1.0;
@@ -112,7 +112,7 @@ uniform_float point_glow_max_fade_dist {
 }
 
 uniform_float point_glow_fade {
-    default = 0.2;
+    default = 0.0;
     min = 0.0;
     max = 1.0;
     step = 0.05;
