@@ -95,6 +95,30 @@ uniform_float point_glow_strength {
     description = "Strength of glow around point lights";
 }
 
+uniform_float point_glow_min_fade_dist {
+    default = 30.0;
+    min = 0.0;
+    max = 1024.0;
+    step = 1.0;
+    description = "Minimum distance from the camera that the point light glow starts to fade in";
+}
+
+uniform_float point_glow_max_fade_dist {
+    default = 100.0;
+    min = 0.0;
+    max = 1024.0;
+    step = 1.0;
+    description = "Distance from the camera that the point light glow fully fades in";
+}
+
+uniform_float point_glow_fade {
+    default = 0.2;
+    min = 0.0;
+    max = 1.0;
+    step = 0.05;
+    description = "How much point lights fade out when they are too close. Use this to fade out torches/lamps that the player is holding.";
+}
+
 uniform_bool point_glow_diffusion {
     default = true;
     description = "Whether mist and clouds should influence point glow (may be expensive)";
@@ -318,6 +342,11 @@ fragment main {
         float d2 = rpos.x * rpos.x + rpos.y * rpos.y + rpos.z * rpos.z;
         return 1.0 / (100.0 + d2);
     }
+	
+	// Maps a float from an input range to an output range, without clamping
+	float map(float value, float min1, float max1, float min2, float max2) {
+	  return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
+	}
 
     vec3 apply_point_glow(vec3 wpos, vec3 dir, float max_dist, vec3 color) {
         for (int i = 0; i < omw_GetPointLightCount(); i ++) {
@@ -338,6 +367,14 @@ fragment main {
                 * 0.5
                 * point_glow_strength
                 * max(1.0 - t * 0.0002, 0.0);
+			
+			// Fade out point lights that are too close to the camera
+			{
+				float d2 = distance(omw.eyePos.xyz, light_pos);
+				d2 = map(d2, point_glow_min_fade_dist, point_glow_max_fade_dist, point_glow_fade, 1.0);
+				d2 = clamp(d2, point_glow_fade, 1.0);
+				strength *= d2;
+			}
 
             if (clamp_point_glow) {
                 strength *= max(0.0, 1.0 - distance_2 / pow(omw_GetPointLightRadius(i), 2.0));
