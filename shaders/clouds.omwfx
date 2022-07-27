@@ -19,6 +19,11 @@ uniform_bool clouds_enabled {
     description = "Enable high-altitude clouds";
 }
 
+uniform_bool clouds_dynamic {
+    default = true;
+    description = "Enable adjustment of cloud density with weather";
+}
+
 uniform_float cloud_density {
     default = 0.5;
     min = 0.0;
@@ -38,6 +43,11 @@ uniform_float cloud_height {
 uniform_bool mist_enabled {
     default = true;
     description = "Enable low-altitude mist";
+}
+
+uniform_bool mist_dynamic {
+    default = true;
+    description = "Enable adjustment of mist with weatherand time of day";
 }
 
 uniform_float mist_density {
@@ -147,6 +157,34 @@ sampler_2d noise {
 
 fragment main {
 
+	//Array of cloud densities per weather ID
+	const float cloud_transition[10]=float[](
+		float(0.0),  //Clear
+		float(0.25), //Cloudy
+		float(0.8),  //Foggy
+		float(0.5),  //Overcast
+		float(0.5),  //Rain
+		float(2.0),  //Thunder
+		float(2.0),  //Ash
+		float(2.0),  //Blight
+		float(0.8),  //Snow
+		float(1.0)   //Blizzard
+	);
+
+	//Array of mist densities per weather ID
+	const float mist_transition[10]=float[](
+		float(0.1),  //Clear
+		float(0.2),  //Cloudy
+		float(2.0),  //Foggy
+		float(0.2),  //Overcast
+		float(0.2),  //Rain
+		float(0.0),  //Thunder
+		float(0.0),  //Ash
+		float(0.0),  //Blight
+		float(0.0),  //Snow
+		float(0.0)   //Blizzard
+	);
+
     omw_In vec2 omw_TexCoord;
 
     #define HORIZON 100000000
@@ -217,12 +255,24 @@ fragment main {
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float mist = 0.0;
         if (mist_enabled) {
-            float mist_nz = mist_density * (0.01
+			float mist_fade = 1.0; //Default no mist
+			if (mist_dynamic) {
+				//Calc mist based on weather state
+				float weather_mist = mix(mist_transition[omw.weatherID],mist_transition[omw.nextWeatherID],omw.weatherTransition);
+				//Filter for time of day 5-8 = max mist, blending an hour each side.
+				float morning_mist = 1-abs(omw.gameHour-clamp(omw.gameHour, 5 , 8));
+				//Which ever is greater wins..
+				mist_fade = max (weather_mist, morning_mist);
+			} else {
+				//Static
+				mist_fade = 1.0; 
+			}
+			float mist_nz = mist_density * mist_fade * (0.01
                 * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
                 * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35 * mist_detail) * 0.4
             );
             float mist_base = omw.waterHeight + mist_height + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.6) * 8000;
-            float mist_height = 5000;
+            float mist_height = 5000 - 500 * mist_fade; // Causes rising mist
 
             mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
         }
@@ -230,6 +280,7 @@ fragment main {
         float cloud_base = 0.0;
         float cloud = 0.0;
         float sun_access = 1.0;
+		float cloud_adjust = 1.0;
         if (clouds_enabled) {
             cloud_base = omw.waterHeight + cloud_height
                 + (noise_2d(wpos.xy * 0.0000003 + time.xy * 0.03) - 0.5) * 300000
@@ -244,7 +295,11 @@ fragment main {
                     }
                 }
             }
-            cloud = cloud_density * pow(max(0.2 + cloud_nz, 0), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
+			if (clouds_dynamic) {
+				//Adjust cloud according to weatherID
+				cloud_adjust = mix(cloud_transition[omw.weatherID], cloud_transition[omw.nextWeatherID], omw.weatherTransition);
+			}
+            cloud = cloud_adjust * cloud_density * pow(max(0.2 + cloud_nz, 0), 3) * 0.001 * pow(max(1.0 - abs(wpos.z - cloud_base) / 400000, 0), 8);
             sun_access *= 1 - min(cloud * 1500000, 1) * clamp((cloud_base - wpos.z) * 0.0000035
                 + (noise_2d(wpos.xy / 500000 - time.xy * 0.2) - 0.5) * 0.1
                 + (noise_3d(wpos / 200000 - time * 0.2) - 0.5) * 0.1
@@ -265,20 +320,20 @@ fragment main {
         pow(max(omw.sunPos.z + 0.2, 0), 0.1)
     );
 
-    vec3 weather_tone(int weather) {
-        switch (omw.weatherID) {
-            case 1: return vec3(0.8);
-            case 2: return vec3(0.65);
-            case 3: return vec3(0.5);
-            case 4: return vec3(0.5);
-            case 5: return vec3(0.5);
-            case 6: return vec3(1.0, 0.5, 0.25);
-            case 7: return vec3(1.0, 0.5, 0.5);
-            default: return vec3(1.0);
-        }
-    }
+	const vec3 weather_tone[10]=vec3[](
+		vec3(0.8),  //Clear
+		vec3(0.65), //Cloudy
+		vec3(0.5),  //Foggy
+		vec3(0.5),  //Overcast
+		vec3(0.4),  //Rain
+		vec3(1.0, 0.5, 0.25),  //Thunder
+		vec3(1.0, 0.5, 0.5),  //Ash
+		vec3(1.0),  //Blight
+		vec3(1.0),   //Snow
+		vec3(1.0)   //Blizzard
+	);
 
-    vec3 sky_tone = mix(weather_tone(omw.weatherID), weather_tone(omw.nextWeatherID), omw.weatherTransition);
+    vec3 sky_tone = mix(weather_tone[omw.weatherID], weather_tone[omw.nextWeatherID], omw.weatherTransition);
 
     vec3 sky_color = mix(
         mix(
@@ -397,18 +452,17 @@ fragment main {
         vec3 wpos = wpos_at(omw_TexCoord);
         float max_dist = distance(omw.eyePos.xyz, wpos);
         vec3 dir = (wpos - omw.eyePos.xyz) / max_dist;
-
-        if (max_dist >= HORIZON * 0.9) {
-            if (replace_skybox) {
-                // Darken the sky above
-                col.rgb = sky_color * mix(vec3(0.5, 0.7, 0.9), vec3(1.0), vec3(1.0 - dir.z));
-            }
-            if (better_sun) {
-                col.rgb += sun_light(dir);
-            }
-        }
-
-        if (!omw.isInterior) {
+        
+		if (!omw.isInterior) {
+			if (max_dist >= HORIZON * 0.9) {
+				if (replace_skybox) {
+					// Darken the sky above
+					col.rgb = sky_color * mix(vec3(0.5, 0.7, 0.9), vec3(1.0), vec3(1.0 - dir.z));
+				}
+				if (better_sun) {
+					col.rgb += sun_light(dir);
+				}
+			}
             col = apply_fog(col, wpos, dir, max_dist);
         }
 
