@@ -134,6 +134,22 @@ uniform_bool point_glow_diffusion {
     description = "Whether mist and clouds should influence point glow (may be expensive)";
 }
 
+uniform_float point_glow_min {
+    default = 25.0;
+    min = 0.0;
+    max = 50.0;
+    step = 1.0;
+    description = "The minimum distance at which point glow has its maximum value";
+}
+
+uniform_float point_glow_falloff {
+    default = 1.4;
+    min = 0.5;
+    max = 2.0;
+    step = 0.025;
+    description = "The exponent used to control point glow falloff";
+}
+
 uniform_bool clamp_point_glow {
     default = true;
     description = "Whether point glow is clamped to the radius of the light (may reduce artifacts)";
@@ -313,7 +329,7 @@ fragment main {
     }
 
     vec3 sun_color = mix(
-        vec3(2, 0.3, 0) * 3,
+        vec3(2, 0.5, 0.2) * 3,
         vec3(0.6, 0.5, 0.0),
         pow(max(omw.sunPos.z + 0.2, 0), 0.1)
     );
@@ -346,7 +362,7 @@ fragment main {
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
         float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
         float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
-        float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 20) * pow(max(omw.sunPos.z, 0), 0.2) * 0.3;
+        float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 50) * pow(clamp(omw.sunPos.z * 10.0, 0, 1), 0.5) * 0.5;
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, sky_tone, max(omw.sunPos.z, 0.3));
 
         vec3 fog_light = fog_color + direct_light * sun_color;
@@ -383,17 +399,17 @@ fragment main {
     }
 
     vec3 sun_light(vec3 dir) {
-        const float frac = 0.002;
+        const float frac = 0.003;
         vec3 sun_dir = normalize(omw.sunPos.xyz);
-        vec3 sun = clamp(pow((dot(dir, sun_dir) - (1.0 - frac)) / frac, 10) * 1, 0, 1) * sun_color * 5;
-        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0), 8) * sun_color * 0.5;
+        vec3 sun = clamp(pow((dot(dir, sun_dir) - (1.0 - frac)) / frac, 10) * 1, 0, 1) * sun_color * 50;
+        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0), 10) * sun_color * 0.5;
 
         return sun + sun_glare;
     }
 
     float attenuation_strength_real(vec3 rpos) {
         float d2 = rpos.x * rpos.x + rpos.y * rpos.y + rpos.z * rpos.z;
-        return 1.0 / (100.0 + d2);
+        return 1.0 / (pow(point_glow_min, 2) + pow(d2, point_glow_falloff));
     }
 	
 	// Maps a float from an input range to an output range, without clamping
