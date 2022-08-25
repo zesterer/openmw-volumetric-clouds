@@ -19,9 +19,9 @@ uniform_bool clouds_enabled {
     description = "Enable high-altitude clouds";
 }
 
-uniform_bool clouds_dynamic{
+uniform_bool dynamic_clouds {
     default = true;
-    description = "Enable adjustment of cloud density with weather";
+    description = "Enable weather-dependent cloud cover";
 }
 
 uniform_float cloud_density {
@@ -45,9 +45,9 @@ uniform_bool mist_enabled {
     description = "Enable low-altitude mist";
 }
 
-uniform_bool mist_dynamic {
+uniform_bool dynamic_mist {
     default = true;
-    description = "Enable adjustment of mist with weatherand time of day";
+    description = "Enable weather-dependent mist";
 }
 
 uniform_float mist_density {
@@ -272,7 +272,7 @@ fragment main {
         float mist = 0.0;
         if (mist_enabled) {
 			float mist_fade = 1.0; //Default full mist
-			if (mist_dynamic) {
+			if (dynamic_mist) {
 				//Calc mist based on weather state
 				float weather_mist = mix(mist_transition[omw.weatherID],mist_transition[omw.nextWeatherID],omw.weatherTransition);
 				//Filter for time of day 5-8 = max mist, blending an hour each side.
@@ -280,7 +280,7 @@ fragment main {
 				//Which ever is greater wins..
 				mist_fade = max (weather_mist, morning_mist);
 			}
-		
+
 			float mist_nz = mist_density * mist_fade * (0.01
                 * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
                 * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35 * mist_detail) * 0.4
@@ -309,7 +309,7 @@ fragment main {
                     }
                 }
             }
-			if (clouds_dynamic) {
+			if (dynamic_clouds) {
 				//Adjust cloud according to weatherID
 				cloud_adjust = mix(cloud_transition[omw.weatherID], cloud_transition[omw.nextWeatherID], omw.weatherTransition);
 			}
@@ -411,7 +411,7 @@ fragment main {
         float d2 = rpos.x * rpos.x + rpos.y * rpos.y + rpos.z * rpos.z;
         return 1.0 / (pow(point_glow_min, 2) + pow(d2, point_glow_falloff));
     }
-	
+
 	// Maps a float from an input range to an output range, without clamping
 	float map(float value, float min1, float max1, float min2, float max2) {
 	  return min2 + (value - min1) * (max2 - min2) / (max1 - min1);
@@ -436,7 +436,7 @@ fragment main {
                 * 0.5
                 * point_glow_strength
                 * max(1.0 - t * 0.0002, 0.0);
-			
+
 			// Fade out point lights that are too close to the camera
 			{
 				float d2 = distance(omw.eyePos.xyz, light_pos);
@@ -466,7 +466,7 @@ fragment main {
         vec3 wpos = wpos_at(omw_TexCoord);
         float max_dist = distance(omw.eyePos.xyz, wpos);
         vec3 dir = (wpos - omw.eyePos.xyz) / max_dist;
-        
+
 		if (!omw.isInterior) {
 			if (max_dist >= HORIZON * 0.9) {
 				if (replace_skybox) {
