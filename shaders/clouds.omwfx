@@ -40,6 +40,14 @@ uniform_float cloud_height {
     description = "Height of clouds above the water level";
 }
 
+uniform_float cloud_depth {
+    default = 120000.0;
+    min = 50000.0;
+    max = 1000000.0;
+    step = 10000;
+    description = "The depth of the cloud column";
+}
+
 uniform_bool mist_enabled {
     default = true;
     description = "Enable low-altitude mist";
@@ -178,13 +186,13 @@ fragment main {
 		float(0.2),  //Clear
 		float(0.35), //Cloudy
 		float(0.25),  //Foggy
-		float(0.6),  //Overcast
-		float(0.7),  //Rain
-		float(0.9),  //Thunder
-		float(1.2),  //Ash
-		float(1.2),  //Blight
-		float(0.7),  //Snow
-		float(0.8)   //Blizzard
+		float(0.4),  //Overcast
+		float(0.5),  //Rain
+		float(0.6),  //Thunder
+		float(0.7),  //Ash
+		float(0.7),  //Blight
+		float(0.5),  //Snow
+		float(0.6)   //Blizzard
 	);
 
 	//Array of mist densities per weather ID
@@ -260,45 +268,49 @@ fragment main {
         );
     }
 
+    float cloud_base = omw.waterHeight + cloud_height;
+
     vec2 fog_at(vec3 wpos, float dist, vec3 dir) {
         wpos.z = max(wpos.z, 0);
-        if (mist_swirling) {
-            wpos.xy += vec2(
-                noise_2d(wpos.xy * 0.0005) - 0.5,
-                noise_2d(wpos.xy * 0.0005) - 0.5
-            ) * 250;
-        }
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
         float mist = 0.0;
         if (mist_enabled) {
-			float mist_fade = 1.0; //Default full mist
-			if (dynamic_mist) {
-				//Calc mist based on weather state
-				float weather_mist = mix(mist_transition[omw.weatherID],mist_transition[omw.nextWeatherID],omw.weatherTransition);
-				//Filter for time of day 5-8 = max mist, blending an hour each side.
-				float morning_mist = 1-abs(omw.gameHour-clamp(omw.gameHour, 5 , 8));
-				//Which ever is greater wins..
-				mist_fade = max (weather_mist, morning_mist);
-			}
-
-			float mist_nz = mist_density * mist_fade * (0.01
-                * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
-                * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35 * mist_detail) * 0.4
-            );
             float mist_base = omw.waterHeight + mist_height + (noise_2d(wpos.xy * 0.00001 + time.xy * 0.03) - 0.6) * 8000;
-            float mist_height = 4500 + 500 * mist_fade; // Causes rising mist
+            const float mist_min_height = 4500.0;
+            const float mist_max_fade = 500.0;
 
-            mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
+            if (abs(wpos.z - mist_base) < mist_min_height + mist_max_fade) {
+                if (mist_swirling) {
+                    wpos.xy += vec2(
+                        noise_2d(wpos.xy * 0.0005) - 0.5,
+                        noise_2d(wpos.xy * 0.0005) - 0.5
+                    ) * 250;
+                }
+
+                float mist_fade = 1.0; //Default full mist
+                if (dynamic_mist) {
+                    //Calc mist based on weather state
+                    float weather_mist = mix(mist_transition[omw.weatherID],mist_transition[omw.nextWeatherID],omw.weatherTransition);
+                    //Filter for time of day 5-8 = max mist, blending an hour each side.
+                    float morning_mist = 1-abs(omw.gameHour-clamp(omw.gameHour, 5 , 8));
+                    //Which ever is greater wins..
+                    mist_fade = max(weather_mist, morning_mist);
+                }
+
+                float mist_nz = mist_density * mist_fade * (0.01
+                    * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
+                    * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35 * mist_detail) * 0.4
+                );
+                float mist_height = mist_min_height + mist_max_fade * mist_fade; // Causes rising mist
+
+                mist = max(mist_nz, 0.0) * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5);
+            }
         }
 
-        float cloud_base = 0.0;
         float cloud = 0.0;
         float sun_access = 1.0;
 		float cloud_adjust = 1.0;  // Default
-        if (clouds_enabled) {
-            cloud_base = omw.waterHeight + cloud_height;
-
-            const float cloud_depth = 120000.0;
+        if (clouds_enabled && abs(wpos.z - cloud_base) < cloud_depth) {
             float density = cloud_density;
 			if (dynamic_clouds) {
 				//Adjust cloud according to weatherID
@@ -310,12 +322,13 @@ fragment main {
 			}
             density = clamp(density, 0.0, 1.0);
 
-            float small_nz = (noise_3d((wpos - time * 10000.0) / 60000.0) - 0.5);
+            float small_nz = (noise_3d((wpos - time * 5000.0) / 60000.0) - 0.5);
             float cloud_factor = max(
                 pow(max(
-                    (noise_3d((wpos + time * 10000.0) / 600000.0) - 1.0 + density) * 3.0
-                    + small_nz * 0.35
-                    //- noise_3d((wpos + time * 0.03) / 20000.0) * 0.1
+                    (noise_3d((wpos + time * 15000.0) / 600000.0) - 1.0 + density) * 3.0
+                    + small_nz * 0.3
+                    + abs(small_nz) * 0.2
+                    //- noise_3d((wpos + time * 0.03) / 10000.0) * 0.1
                 , 0.0), 5.0)
             , 0.0);
             sun_access = clamp(
@@ -323,12 +336,12 @@ fragment main {
                 + 2.0
                 - density * 0.1
                 - dir.z * 0.1
-                + small_nz * pow(density, 2) * 0.5
-                - pow(min(cloud_factor, 0.75), 0.05) * 1.2
+                - abs(small_nz) * pow(density, 2) * 0.25
+                - pow(cloud_factor, 0.03) * 1.2
             , 0.25, 1.0);
             cloud = cloud_adjust
                 * cloud_factor
-                * 0.003
+                * 0.01
                 * pow(max(1.0 - abs(wpos.z - cloud_base) / cloud_depth, 0), 8);
         }
 
@@ -372,9 +385,9 @@ fragment main {
     ) * sky_tone;
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist) {
-        float sun_light = pow(max(omw.sunPos.z, 0), 0.25);
+        float sun_light = pow(max(omw.sunPos.z, 0), 0.25) * 1.3;
         float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
-        float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 50) * pow(clamp(omw.sunPos.z * 10.0, 0, 1), 0.5) * 0.5;
+        float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 50) * pow(clamp(omw.sunPos.z * 10.0, 0, 1), 0.5);
         vec3 fog_color = (sun_light + moon_light) * mix(sky_color, sky_tone, max(omw.sunPos.z, 0.3));
 
         vec3 fog_light = fog_color + direct_light * sun_color;
