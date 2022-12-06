@@ -419,7 +419,7 @@ fragment main {
             col.rgb = mix(fog_light * fog.y, col.rgb, pow(0.9999, abs(dist - new_dist) * fog.x * 10000));
 
             // Rayleigh scattering
-            col.rgb = mix(col.rgb, sky_color, (1.0 - 1.0 / (1.0 + abs(dist - new_dist) * 0.000015 * scattering_factor)) * clamp((20000 - spos.z) * 0.0001, 0.0, 1.0));
+            col.rgb = mix(col.rgb, sky_color, (1.0 - 1.0 / (1.0 + abs(dist - new_dist) * 0.00001 * scattering_factor)) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
