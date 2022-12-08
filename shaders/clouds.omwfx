@@ -1,11 +1,11 @@
 uniform_float sampling_quality {
     header = "General";
     default = 0.0;
-    min = 0.0;
+    min = -5.0;
     max = 10.0;
     step = 0.1;
     display_name = "Sampling Quality";
-    description = "The sampling quality of cloud raymarching";
+    description = "The sampling quality of cloud raymarching (higher values hurt performance but improve the stability of clouds and mist when in motion, low values are cheaper but may break visuals)";
 }
 
 uniform_float scattering_factor {
