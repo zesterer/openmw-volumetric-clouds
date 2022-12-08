@@ -7,11 +7,17 @@ distances are great, but they ruin the sense of immersion and mystery. Equally, 
 opposite problem: you never get the opportunity to see the sights. With this mod, you'll experience the best of both
 worlds: mystery and intrigue, with occasional moments of wonder when the mist clears and you can see for miles.
 
-[![A view over Vivec, looking north-east](https://i.imgur.com/UH4TMey.png)](https://youtu.be/CwzaRQRjlcU)
-[![Mist outside Vivec](https://i.imgur.com/eUuck8r.png)](https://youtu.be/CwzaRQRjlcU)
-[![Volumetric clouds in the distance over Red Mountain](https://i.imgur.com/SaoByZR.png)](https://youtu.be/CwzaRQRjlcU)
-[![Dawn in Vivec](https://i.imgur.com/C7Sm02j.png)](https://youtu.be/CwzaRQRjlcU)
-[![A misty night in Seyda Neen](https://i.imgur.com/c2NTbez.png)](https://youtu.be/CwzaRQRjlcU)
+[![Balmora at dawn](https://cdn.discordapp.com/attachments/1006899385239617587/1050450765094846514/image.png)](https://youtu.be/CwzaRQRjlcU)
+
+*Note that these screenshots were taken with additional mods installed, such as [Morrowind Rebirth](https://www.nexusmods.com/morrowind/mods/37795/).*
+
+<details>
+    <summary>More screenshots</summary>
+    <img src="https://cdn.discordapp.com/attachments/1006899385239617587/1050450764557979718/image.png" alt="Balmora at noon">
+    <img src="https://cdn.discordapp.com/attachments/1006899385239617587/1050450765543657583/image.png" alt="A clear sky">
+    <img src="https://cdn.discordapp.com/attachments/1006899385239617587/1050450765883379822/image.png" alt="Clouds at a distance">
+    <img src="https://cdn.discordapp.com/attachments/530703252543635487/1050472615300563055/image.png" alt="A misty morning in Vivec">
+</details>
 
 ## Recommendations
 
