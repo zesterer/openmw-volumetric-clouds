@@ -90,14 +90,6 @@ uniform_float mist_speed {
     description = "The speed that mist moves through the world";
 }
 
-uniform_float mist_detail {
-    default = 0.5;
-    min = 0.0;
-    max = 1.5;
-    step = 0.1;
-    description = "Detailing visible in mist. If you experience rippling, turn this down";
-}
-
 uniform_bool mist_swirling {
     default = false;
     description = "An additional swirling effect to mist";
@@ -316,16 +308,18 @@ fragment main {
             const float mist_max_fade = 500.0;
 
             if (abs(wpos.z - mist_base) < mist_min_height + mist_max_fade) {
+                float swirl = 1.0;
                 if (mist_swirling) {
                     wpos.xy += vec2(
-                        noise_2d(wpos.xy * 0.0005) - 0.5,
-                        noise_2d(wpos.xy * 0.0005) - 0.5
+                        noise_2d((wpos.xy + wpos.z * 0.1) * 0.0005) - 0.5,
+                        noise_2d((wpos.xy + wpos.z * 0.1) * 0.0005) - 0.5
                     ) * 250;
+                    swirl = (noise_3d((wpos - time * 5000 * mist_speed) / 30000) - 0.5) * 3.5 + 1.0;
                 }
 
-                float mist_nz = mist_density * dyn_mist * (0.005
-                    * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
-                    * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35 * mist_detail) * 0.4
+                float mist_nz = mist_density * dyn_mist * (0.00025
+                    * ((noise_2d((wpos.xy - time.x * 2000 * mist_speed) / 18000) - 0.5) * 0.5 + 1.0)
+                    * swirl
                 );
                 float mist_height = mist_min_height + mist_max_fade * dyn_mist; // Causes rising mist
 
