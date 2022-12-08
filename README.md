@@ -24,6 +24,7 @@ worlds: mystery and intrigue, with occasional moments of wonder when the mist cl
 - Enable the FXAA post-processing shader (make sure that it comes *after* clouds in the render order)
 - Disable or reduce [MSAA](https://openmw.readthedocs.io/en/stable/reference/modding/settings/video.html#antialiasing)
   (post-processing effects do not play well with it, so you're usually better off just using FXAA)
+- The point glow effect works best with [Hemaris' 'Improved Lights' mod](https://www.nexusmods.com/morrowind/mods/51463/)
 
 ## Installing
 

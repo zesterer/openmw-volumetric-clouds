@@ -49,9 +49,9 @@ uniform_float cloud_depth {
 }
 
 uniform_int cloud_detail {
-    default = 1;
+    default = 3;
     min = 0;
-    max = 2;
+    max = 3;
     step = 1;
     description = "The amount of detail added to clouds";
 }
@@ -75,7 +75,7 @@ uniform_float mist_density {
 }
 
 uniform_float mist_height {
-    default = 1250.0;
+    default = 1500.0;
     min = 0.0;
     max = 3000.0;
     step = 250;
@@ -114,7 +114,7 @@ uniform_bool better_sun {
 }
 
 uniform_float point_glow_strength {
-    default = 0.25;
+    default = 0.4;
     min = 0.0;
     max = 1.0;
     step = 0.05;
@@ -167,7 +167,7 @@ uniform_float point_glow_falloff {
 }
 
 uniform_bool clamp_point_glow {
-    default = true;
+    default = false;
     description = "Whether point glow is clamped to the radius of the light (may reduce artifacts)";
 }
 
@@ -183,6 +183,17 @@ uniform_bool debug {
 
 sampler_2d noise {
     source = "textures/noise2.png";
+    mag_filter = linear;
+    min_filter = linear;
+    wrap_s = repeat;
+    wrap_t = repeat;
+    source_format = red;
+    internal_format = red;
+    source_type = unsigned_byte;
+}
+
+sampler_2d billow_noise {
+    source = "textures/noise3.png";
     mag_filter = linear;
     min_filter = linear;
     wrap_s = repeat;
@@ -265,6 +276,10 @@ fragment main {
         return omw_Texture2D(noise, pos).x;
     }
 
+    float billow_noise_2d(vec2 pos) {
+        return omw_Texture2D(billow_noise, pos).x;
+    }
+
     float noise_3d(vec3 pos) {
         pos.z *= 15.0;
         int z = int(floor(pos.z));
@@ -277,14 +292,26 @@ fragment main {
         );
     }
 
+    float billow_noise_3d(vec3 pos) {
+        pos.z *= 15.0;
+        int z = int(floor(pos.z));
+        vec2 offs0 = vec2(hash_one(z), hash_one(z + 73));
+        vec2 offs1 = vec2(hash_one(z + 1), hash_one(z + 1 + 73));
+        return mix(
+            billow_noise_2d(pos.xy + offs0),
+            billow_noise_2d(pos.xy + offs1),
+            fract(pos.z)
+        );
+    }
+
     vec2 fog_at(vec3 wpos, float dist, vec3 dir, in float dyn_clouds, in float dyn_mist) {
         wpos.z = max(wpos.z, 0);
-        vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
+        vec3 time = vec3(omw.simulationTime * 0.065, 0, 0);
         float mist = 0.0;
         if (mist_enabled) {
             float mist_base = omw.waterHeight
                 + mist_height
-                + (noise_2d(wpos.xy * 0.000003 + time.xy * 0.03) - 0.6) * 6000;
+                + (noise_2d(wpos.xy * 0.000003 + time.xy * 0.03) - 0.6) * 3000;
             const float mist_min_height = 4500.0;
             const float mist_max_fade = 500.0;
 
@@ -296,7 +323,7 @@ fragment main {
                     ) * 250;
                 }
 
-                float mist_nz = mist_density * dyn_mist * (0.01
+                float mist_nz = mist_density * dyn_mist * (0.005
                     * ((noise_3d((wpos - time * 2000 * mist_speed) / 3000) - 0.5) * 0.35 + 0.5) * 0.8
                     * (0.5 - abs(noise_3d((wpos + time * 3000 * mist_speed) / 2000) - 0.5) * 0.35 * mist_detail) * 0.4
                 );
@@ -310,31 +337,39 @@ fragment main {
         float sun_access = 1.0;
 
         float cloud_base = omw.waterHeight + cloud_height;
+        if (cloud_detail >= 3) { cloud_base += (noise_2d((wpos.xy - time.x * 1000.0) / 800000.0) - 0.5) * 25000.0; }
         if (clouds_enabled && abs(wpos.z - cloud_base) < cloud_depth) {
             float small_nz = 0.0;
-            if (cloud_detail >= 1) { small_nz += noise_3d((wpos - time * 5000.0) / 120000.0) - 0.5; }
-            if (cloud_detail >= 2) { small_nz += (noise_3d((wpos - time * 3000.0) / 30000.0) - 0.5) * 0.25; }
+            if (cloud_detail >= 1) { small_nz += billow_noise_3d((wpos - time * 5000.0) / 120000.0) - 0.5; }
+            if (cloud_detail >= 3) { small_nz += (billow_noise_3d((wpos - time * 10000.0) / 30000.0) - 0.5) * 0.25; }
+
+            vec3 sample_wpos = (wpos - vec3(0, 0, cloud_base)) * vec3(0.55, 0.55, 1);
+            float cloud_f = noise_3d((sample_wpos + vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+            float cloud_f2 = cloud_f;
+            if (cloud_detail >= 2) {
+                cloud_f2 = noise_3d((sample_wpos - vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+            }
 
             float cloud_factor = max(
                 pow(max(
-                    (noise_3d((wpos * vec3(0.5, 0.5, 1) + time * 15000.0) / 600000.0) - 1.0 + dyn_clouds)
-                    + small_nz * 0.1
-                    + abs(small_nz) * 0.1
+                    ((cloud_f + cloud_f2) * 0.5 - 1.0 + dyn_clouds)
+                    - small_nz * 0.1
                 , 0.0) * 3.0, 5.0)
             , 0.0);
-            sun_access = clamp(
-                2.0 + (wpos.z - cloud_base) / cloud_depth * 0.25
-                - dyn_clouds * 0.1
-                - dir.z * 0.1
-                - abs(small_nz) * pow(dyn_clouds, 2) * 0.35
-                - pow(cloud_factor, 0.03) * 1.25
-            , 0.25, 1.0);
             cloud = cloud_factor
                 * 0.01
                 * pow(max(1.0 - abs(wpos.z - cloud_base) / cloud_depth, 0), 8);
+            sun_access = clamp(
+                1.25 + (wpos.z - cloud_base) / cloud_depth * 0.25
+                - dyn_clouds * 0.1
+                - dir.z * 0.1
+                - clamp((cloud_f - cloud_f2) * 2.0, -0.5, 0.5)
+                + pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25
+                - pow(cloud_factor, 0.03) * 0.5
+            , 0.25 + mist * 100000, 1.0);
         }
 
-        float attenuation = 0.00009 / (1.0 + wpos.z / 300);
+        //float attenuation = 0.00009 / (1.0 + wpos.z / 300);
 
         return vec2(
             mist + cloud,// + attenuation,
@@ -385,10 +420,7 @@ fragment main {
 
         vec3 fog_light = fog_color + direct_light * sun_color;
 
-        //float step_factor = 1.0 / mix(0.75, 1, samples) * 0.3;
-
         float dist = max_dist;
-        //float f = log(dist) / step_factor + 1;
 
         // Initial
         //vec2 ifog = fog_at(omw.eyePos.xyz + dir * max_dist, max_dist, dir, dyn_clouds, dyn_mist) * vec2(0.1, 1.0);
@@ -410,16 +442,28 @@ fragment main {
         ifog *= max(abs(dir.z), 0.35);
         col.rgb = mix(fog_light * ifog.y, col.rgb, pow(0.9999, abs(dist - wspace(f)) * ifog.x * 10000 * 0.5));
 
-        while (f > lspace(1000.0) && i++ < 100) {
-            float new_dist = wspace(f);//min(exp(f * step_factor) * 20.0, max_dist);
+        // Define a minimum sampling distance that is very close for tight spaces, but a more sensible compromise for distant spaces
+        float min_lspace = min(lspace(50.0), max_dist * 0.01);
+
+        while (f > min_lspace && i++ < 100) {
+            float new_dist = wspace(f);
+            float step = dist - new_dist;
 
             vec3 spos = omw.eyePos.xyz + dir * new_dist;
             vec2 fog = fog_at(spos, dist, dir, dyn_clouds, dyn_mist);
 
-            col.rgb = mix(fog_light * fog.y, col.rgb, pow(0.9999, abs(dist - new_dist) * fog.x * 10000));
+            col.rgb = mix(fog_light * fog.y, col.rgb, pow(0.9999, step * fog.x * 10000));
+            /*
+            float cloud_darken = pow(1.0 / (1.0 + fog.x), step);
+            col.rgb =
+                // Attenuate light due to clouds
+                col.rgb * cloud_darken +
+                // Re-add light that's been scattered
+                fog_light * fog.y * (1.0 - cloud_darken);
+            */
 
             // Rayleigh scattering
-            col.rgb = mix(col.rgb, sky_color, (1.0 - 1.0 / (1.0 + abs(dist - new_dist) * 0.00001 * scattering_factor)) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
+            col.rgb = mix(col.rgb, sky_color, (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor)) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
@@ -463,7 +507,6 @@ fragment main {
             }
 
             float strength = pow(attenuation_strength_real(difference), spread)
-                * 0.5
                 * point_glow_strength
                 * max(1.0 - t * 0.0002, 0.0);
 
@@ -491,7 +534,6 @@ fragment main {
     }
 
     void main() {
-
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
 
         vec3 wpos = wpos_at(omw_TexCoord);
@@ -522,7 +564,11 @@ fragment main {
             dyn_mist = max(weather_mist, morning_mist);
         }
 
-		if (!omw.isInterior) {
+		if (omw.isInterior) {
+            // Slightly attenuate light in interiors
+            // TODO: Do proper volumetrics?
+            col.rgb = mix(omw.sunColor.rgb * 0.35, col.rgb, 1.0 / (1.0 + max_dist * 0.0003));
+        } else {
 			if (max_dist >= HORIZON * 0.9) {
 				if (replace_skybox) {
 					// Darken the sky above
