@@ -133,7 +133,7 @@ uniform_bool point_glow_enabled {
 }
 
 uniform_float point_glow_intensity {
-    default = 0.4;
+    default = 0.3;
     min = 0.0;
     max = 1.0;
     step = 0.05;
@@ -201,7 +201,7 @@ uniform_bool clamp_point_glow {
 uniform_bool dithering_enabled {
     header = "Extra";
     default = false;
-    display_name = "Enabled";
+    display_name = "Dithering";
     description = "Whether dithering is enabled, reducing color banding in dark areas";
 }
 
@@ -403,12 +403,12 @@ fragment main {
                 // Fade out clouds if they come too close
                 * clamp((dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0);
             sun_access = clamp(
-                1.25 + (wpos.z - cloud_base) / cloud_depth * 0.25
+                1.65 + (wpos.z - cloud_base) / cloud_depth * 0.25
                 - dyn_clouds * 0.1
                 - dir.z * 0.1
                 - clamp((cloud_f - cloud_f2) * 2.0, -0.5, 0.5)
                 + pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25
-                - pow(cloud_factor, 0.03) * 0.5
+                - pow(cloud_factor, 0.03) * 1.0
             , 0.25 + mist * 100000, 1.0);
         }
 
