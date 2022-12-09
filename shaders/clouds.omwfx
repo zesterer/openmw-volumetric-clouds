@@ -200,7 +200,7 @@ uniform_bool clamp_point_glow {
 
 uniform_bool dithering_enabled {
     header = "Extra";
-    default = false;
+    default = true;
     display_name = "Dithering";
     description = "Whether dithering is enabled, reducing color banding in dark areas";
 }
@@ -358,7 +358,7 @@ fragment main {
                         noise_2d((wpos.xy + wpos.z * 0.1) * 0.0005) - 0.5,
                         noise_2d((wpos.xy + wpos.z * 0.1) * 0.0005) - 0.5
                     ) * 250;
-                    swirl = (noise_3d((wpos - time * 5000 * mist_speed) / 30000) - 0.5) * 3.5 + 1.0;
+                    swirl = (noise_3d((wpos - time * 2500 * mist_speed) / 30000) - 0.5) * 3.5 + 1.0;
                 }
 
                 float mist_nz = mist_density * dyn_mist * (0.00025
