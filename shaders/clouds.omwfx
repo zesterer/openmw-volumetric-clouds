@@ -338,13 +338,13 @@ fragment main {
     const float MIN_MIST_DIST = 100.0;
     const float MIN_CLOUD_DIST = 10000.0;
 
-    vec2 fog_at(vec3 wpos, float dist, vec3 dir, in float dyn_clouds, in float dyn_mist) {
+    vec2 fog_at(vec3 wpos, float cull_dist, vec3 dir, in float dyn_clouds, in float dyn_mist) {
         wpos.z = max(wpos.z, 0);
         vec3 time = vec3(omw.simulationTime * 0.1, 0, 0);
 
         float mist = 0.0;
 
-        if (mist_enabled && dist > MIN_MIST_DIST) {
+        if (mist_enabled && cull_dist > MIN_MIST_DIST) {
             float mist_base = omw.waterHeight
                 + mist_alt
                 + (noise_2d(wpos.xy * 0.000003 + time.xy * 0.03) - 0.6) * 3000;
@@ -361,16 +361,17 @@ fragment main {
                     swirl = (noise_3d((wpos - time * 2500 * mist_speed) / 30000) - 0.5) * 3.5 + 1.0;
                 }
 
-                float mist_nz = mist_density * dyn_mist * (0.00025
+                float mist_nz = mist_density
+                    * dyn_mist
+                    * 0.0005
                     * ((noise_2d((wpos.xy - time.x * 2000 * mist_speed) / 18000) - 0.5) * 0.5 + 1.0)
-                    * swirl
-                );
+                    * swirl;
                 float mist_height = mist_min_height + mist_max_fade * dyn_mist; // Causes rising mist
 
                 mist = max(mist_nz, 0.0)
                     * pow(clamp(1.0 - (wpos.z - mist_base) / mist_height, 0, 1), 5)
                     // Fade out mist if it comes too close
-                    * clamp((dist - MIN_MIST_DIST) * (1.0 / MIN_MIST_DIST), 0, 1.0);
+                    * clamp((cull_dist - MIN_MIST_DIST) * (1.0 / MIN_MIST_DIST), 0, 1.0);
             }
         }
 
@@ -378,38 +379,44 @@ fragment main {
         float sun_access = 1.0;
 
         float cloud_base = omw.waterHeight + cloud_alt;
-        if (cloud_detail >= 3) { cloud_base += (noise_2d((wpos.xy - time.x * 1000.0) / 800000.0) - 0.5) * 25000.0; }
-        if (clouds_enabled && abs(wpos.z - cloud_base) < cloud_depth && dist > MIN_CLOUD_DIST) {
-            float small_nz = 0.0;
-            if (cloud_detail >= 1) { small_nz += billow_noise_3d((wpos - time * 5000.0) / 120000.0) - 0.5; }
-            if (cloud_detail >= 3) { small_nz += (billow_noise_3d((wpos - time * 10000.0) / 30000.0) - 0.5) * 0.25; }
+        if (clouds_enabled && cull_dist > MIN_CLOUD_DIST) {
+            if (cloud_detail >= 3) { cloud_base += (noise_2d((wpos.xy - time.x * 1000.0) / 800000.0) - 0.5) * 25000.0; }
+            if (abs(wpos.z - cloud_base) < cloud_depth) {
+                float small_nz = 0.0;
+                if (cloud_detail >= 1) { small_nz += billow_noise_3d((wpos - time * 5000.0) / 120000.0) - 0.5; }
+                if (cloud_detail >= 3) { small_nz += (billow_noise_3d((wpos - time * 10000.0) / 30000.0) - 0.5) * 0.25; }
 
-            vec3 sample_wpos = (wpos - vec3(0, 0, cloud_base)) * vec3(0.55, 0.55, 1);
-            float cloud_f = noise_3d((sample_wpos + vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
-            float cloud_f2 = cloud_f;
-            if (cloud_detail >= 2) {
-                cloud_f2 = noise_3d((sample_wpos - vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+                vec3 sample_wpos = (wpos - vec3(0, 0, cloud_base)) * vec3(0.55, 0.55, 1);
+                float cloud_f = noise_3d((sample_wpos + vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+                float cloud_f2 = cloud_f;
+                if (cloud_detail >= 2) {
+                    cloud_f2 = noise_3d((sample_wpos - vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+                }
+
+                float cloud_factor = max(
+                    pow(max(
+                        ((cloud_f + cloud_f2) * 0.5 - 1.0 + dyn_clouds)
+                        - small_nz * 0.1
+                    , 0.0) * 3.0, 5.0)
+                , 0.0);
+                cloud = cloud_factor
+                    * 0.01
+                    * pow(max(1.0 - abs(wpos.z - cloud_base) / cloud_depth, 0), 8)
+                    // Fade out clouds if they come too close
+                    * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0);
+                sun_access = mix(
+                    clamp(
+                        1.65 + (wpos.z - cloud_base) / cloud_depth * 0.25
+                        - dyn_clouds * 0.1
+                        - dir.z * 0.1
+                        - clamp((cloud_f - cloud_f2) * 2.0, -0.5, 0.5)
+                        + pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25
+                        - pow(cloud_factor, 0.03) * 1.0
+                    , 0.25, 1.0),
+                    sun_access,
+                    min(mist * 100000, 1.0)
+                );
             }
-
-            float cloud_factor = max(
-                pow(max(
-                    ((cloud_f + cloud_f2) * 0.5 - 1.0 + dyn_clouds)
-                    - small_nz * 0.1
-                , 0.0) * 3.0, 5.0)
-            , 0.0);
-            cloud = cloud_factor
-                * 0.01
-                * pow(max(1.0 - abs(wpos.z - cloud_base) / cloud_depth, 0), 8)
-                // Fade out clouds if they come too close
-                * clamp((dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0);
-            sun_access = clamp(
-                1.65 + (wpos.z - cloud_base) / cloud_depth * 0.25
-                - dyn_clouds * 0.1
-                - dir.z * 0.1
-                - clamp((cloud_f - cloud_f2) * 2.0, -0.5, 0.5)
-                + pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25
-                - pow(cloud_factor, 0.03) * 1.0
-            , 0.25 + mist * 100000, 1.0);
         }
 
         //float attenuation = 0.00009 / (1.0 + wpos.z / 300);
@@ -480,7 +487,7 @@ fragment main {
         float f = floor(lspace(dist));
 
         vec3 ispos = omw.eyePos.xyz + dir * dist;
-        vec2 ifog = fog_at(ispos, dist, dir, dyn_clouds, dyn_mist);
+        vec2 ifog = fog_at(ispos, 0.0, dir, dyn_clouds, dyn_mist);
         ifog *= 1.0 - abs(fract(lspace(dist)) - 0.5) * 2;
         ifog *= max(abs(dir.z), 0.35);
         col.rgb = mix(fog_light * ifog.y, col.rgb, pow(0.9999, abs(dist - wspace(f)) * ifog.x * 10000 * 0.5));
