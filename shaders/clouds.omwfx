@@ -205,6 +205,15 @@ uniform_bool dithering_enabled {
     description = "Whether dithering is enabled, reducing color banding in dark areas";
 }
 
+uniform_float interior_mist {
+    default = 0.35;
+    min = 0.0;
+    max = 1.0;
+    step = 0.05;
+    display_name = "Interior Mist";
+    description = "The amount of mist applied to interiors as a result of dusk and other fine diffuse particles";
+}
+
 uniform_bool debug {
     header = "Debugging";
     default = false;
@@ -624,9 +633,11 @@ fragment main {
         }
 
 		if (omw.isInterior) {
-            // Slightly attenuate light in interiors
-            // TODO: Do proper volumetrics?
-            col.rgb = mix(omw.sunColor.rgb * 0.35, col.rgb, 1.0 / (1.0 + max_dist * 0.0003));
+            if (interior_mist > 0.0) {
+                // Slightly attenuate light in interiors
+                // TODO: Do proper volumetrics?
+                col.rgb = mix(mix(omw.sunColor.rgb, normalize(omw.sunColor.rgb), 0.75) * 0.4, col.rgb, 1.0 / (1.0 + max_dist * 0.005 * pow(interior_mist, 2)));
+            }
         } else {
 			if (max_dist >= HORIZON * 0.9) {
 				if (replace_skybox) {
