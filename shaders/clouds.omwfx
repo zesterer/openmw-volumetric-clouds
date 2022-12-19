@@ -402,7 +402,9 @@ fragment main {
                     - 1.0
                     + dyn_clouds;
 
-                if (cloud_large > -0.1) { // Culling
+                float depth_factor = max(1.0 - abs(wpos.z - cloud_base) / cloud_depth, 0);
+
+                if (cloud_large > -0.1 && depth_factor > 0.0) { // Culling
                     float small_nz = 0.0;
                     if (cloud_detail >= 1) { small_nz += billow_noise_3d((wpos - time * 5000.0) / 120000.0) - 0.5; }
                     if (cloud_detail >= 3) { small_nz += (billow_noise_3d((wpos - time * 10000.0) / 30000.0) - 0.5) * 0.25; }
@@ -415,7 +417,7 @@ fragment main {
                     , 0.0);
                     cloud = cloud_factor
                         * 0.01
-                        * pow(max(1.0 - abs(wpos.z - cloud_base) / cloud_depth, 0), 8)
+                        * pow(depth_factor, 8)
                         // Fade out clouds if they come too close
                         * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0);
                     sun_access = mix(
