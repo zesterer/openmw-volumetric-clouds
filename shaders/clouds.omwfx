@@ -133,7 +133,7 @@ uniform_bool point_glow_enabled {
 }
 
 uniform_float point_glow_intensity {
-    default = 0.3;
+    default = 0.5;
     min = 0.0;
     max = 1.0;
     step = 0.05;
@@ -507,10 +507,11 @@ fragment main {
         float f = floor(lspace(dist));
 
         vec3 ispos = omw.eyePos.xyz + dir * dist;
-        vec2 ifog = fog_at(ispos, 0.0, dir, dyn_clouds, dyn_mist);
-        ifog *= 1.0 - abs(fract(lspace(dist)) - 0.5) * 2;
-        ifog *= max(abs(dir.z), 0.35);
-        col.rgb = mix(fog_light * ifog.y, col.rgb, pow(0.9999, abs(dist - wspace(f)) * ifog.x * 10000 * 0.5));
+        vec2 ifog = fog_at(ispos, dist, dir, dyn_clouds, dyn_mist);
+        //ifog *= 1.0 - abs(fract(lspace(dist)) - 0.5) * 2;
+        //ifog *= max(abs(dir.z), 0.35);
+        const float SCALE_UP_HACK = 20000.0;
+        col.rgb = mix(fog_light * ifog.y, col.rgb, pow(0.9999, /*abs(dist - wspace(f))*/SCALE_UP_HACK * ifog.x * 10000 * 0.5 /* * pow(1.0 - abs(fract(lspace(dist)) - 0.5) * 2.0, 0.5)*/));
 
         // Define a minimum sampling distance that is very close for tight spaces, but a more sensible compromise for distant spaces
         float min_lspace = min(lspace(50.0), max_dist * 0.01);
