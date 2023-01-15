@@ -7,6 +7,8 @@ distances are great, but they ruin the sense of immersion and mystery. Equally, 
 opposite problem: you never get the opportunity to see the sights. With this mod, you'll experience the best of both
 worlds: mystery and intrigue, with occasional moments of wonder when the mist clears and you can see for miles.
 
+## Screenshots
+
 [![Balmora at dawn](https://cdn.discordapp.com/attachments/1006899385239617587/1050450765094846514/image.png)](https://youtu.be/CwzaRQRjlcU)
 
 *Note that these screenshots were taken with additional mods installed, such as [Morrowind Rebirth](https://www.nexusmods.com/morrowind/mods/37795/).*
@@ -18,6 +20,17 @@ worlds: mystery and intrigue, with occasional moments of wonder when the mist cl
     <img src="https://cdn.discordapp.com/attachments/1006899385239617587/1050450765883379822/image.png" alt="Clouds at a distance">
     <img src="https://cdn.discordapp.com/attachments/530703252543635487/1050472615300563055/image.png" alt="A misty morning in Vivec">
 </details>
+
+## Features
+
+- **Clouds**: Realistic, volumetric, raycasted clouds that move, swirl, and change in real time as you play
+- **Mist**: Low-lying mist that comes and goes throughout the day, altering the effective view distance dynamically
+- **Rayleigh scattering**: Light realistically attenuates as it moves through the atmosphere, improving the sense of depth and scale
+- **Weather**: Both clouds and mist properly react to in-game weather conditions in a realistic way
+- **Point glow**: An effect that adds diffuse glowing aura around light sources, dynamically changing according to mist cover
+- **Interior mist**: An effect that emulates dust and water vapour in interiors
+- **Improved skybox and sun rendering**: Adds a little flair to Morrowind sunsets
+- **Many configurable settings**: Pick and choose what features you enable or exactly how your game looks
 
 ## Recommendations
 
