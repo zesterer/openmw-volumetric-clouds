@@ -43,13 +43,22 @@ uniform_bool dynamic_clouds {
     description = "Enable weather-dependent cloud cover";
 }
 
-uniform_float cloud_density {
+uniform_float cloud_coverage {
     default = 0.5;
     min = 0.0;
     max = 1.0;
     step = 0.05;
+    display_name = "Coverage";
+    description = "Multiplier applied on top of weather-based cloud coverage";
+}
+
+uniform_float cloud_density {
+    default = 0.0;
+    min = -10.0;
+    max = 10.0;
+    step = 0.1;
     display_name = "Density";
-    description = "Density of clouds";
+    description = "Density of clouds, higher values gives clouds 'sharper' edges";
 }
 
 uniform_float cloud_alt {
@@ -77,6 +86,15 @@ uniform_int cloud_detail {
     step = 1;
     display_name = "Detail";
     description = "The amount of detail added to clouds";
+}
+
+uniform_float cloud_light_factor {
+    default = 0.0;
+    min = -0.35;
+    max = 0.35;
+    step = 0.05;
+    display_name = "Lighting";
+    description = "Changes the amount of light that clouds are exposed to";
 }
 
 uniform_bool mist_enabled {
@@ -419,7 +437,8 @@ fragment main {
                         * 0.01
                         * pow(depth_factor, 8)
                         // Fade out clouds if they come too close
-                        * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0);
+                        * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0)
+                        * pow(2.0, cloud_density);
                     sun_access = mix(
                         clamp(
                             1.65 + (wpos.z - cloud_base) / cloud_depth * 0.25
@@ -428,6 +447,7 @@ fragment main {
                             - clamp((cloud_f - cloud_f2) * 2.0, -0.5, 0.5)
                             + pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25
                             - pow(cloud_factor, 0.03) * 1.0
+                            + cloud_light_factor
                         , 0.25, 1.0),
                         sun_access,
                         min(mist * 100000, 1.0)
@@ -619,7 +639,7 @@ fragment main {
         vec3 dir = (wpos - omw.eyePos.xyz) / max_dist;
 
         // Dynamically adjust clouds with weather
-        float dyn_clouds = cloud_density;
+        float dyn_clouds = cloud_coverage;
         if (dynamic_clouds) {
             //Adjust cloud according to weatherID
             dyn_clouds *= mix(
