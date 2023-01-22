@@ -385,13 +385,13 @@ fragment main {
                         noise_2d((wpos.xy + wpos.z * 0.1) * 0.0005) - 0.5,
                         noise_2d((wpos.xy + wpos.z * 0.1) * 0.0005) - 0.5
                     ) * 250;
-                    swirl = (noise_3d((wpos - time * 2500 * mist_speed) / 30000) - 0.5) * 3.5 + 1.0;
+                    swirl = (noise_3d((wpos - time * 2500 * mist_speed) * (1.0 / 30000.0)) - 0.5) * 3.5 + 1.0;
                 }
 
                 float mist_nz = mist_density
                     * dyn_mist
                     * 0.0005
-                    * ((noise_2d((wpos.xy - time.x * 2000 * mist_speed) / 18000) - 0.5) * 0.5 + 1.0)
+                    * ((noise_2d((wpos.xy - time.x * 2000 * mist_speed) * (1.0 / 18000.0)) - 0.5) * 0.5 + 1.0)
                     * swirl;
                 float mist_height = mist_min_height + mist_max_fade * dyn_mist; // Causes rising mist
 
@@ -407,13 +407,13 @@ fragment main {
 
         float cloud_base = omw.waterHeight + cloud_alt;
         if (clouds_enabled && cull_dist > MIN_CLOUD_DIST) {
-            if (cloud_detail >= 3) { cloud_base += (noise_2d((wpos.xy - time.x * 1000.0) / 800000.0) - 0.5) * 25000.0; }
+            if (cloud_detail >= 3) { cloud_base += (noise_2d((wpos.xy - time.x * 1000.0) * (1.0 / 800000.0)) - 0.5) * 25000.0; }
             if (abs(wpos.z - cloud_base) < cloud_depth) {
                 vec3 sample_wpos = (wpos - vec3(0, 0, cloud_base)) * vec3(0.55, 0.55, 1);
-                float cloud_f = noise_3d((sample_wpos + vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+                float cloud_f = noise_3d((sample_wpos + vec3(0, 0, 5000) + time * 15000.0) * (1.0 / 500000.0));
                 float cloud_f2 = cloud_f;
                 if (cloud_detail >= 2) {
-                    cloud_f2 = noise_3d((sample_wpos - vec3(0, 0, 5000) + time * 15000.0) / 600000.0);
+                    cloud_f2 = noise_3d((sample_wpos - vec3(0, 0, 5000) + time * 15000.0) * (1.0 / 500000.0));
                 }
 
                 float cloud_large = (cloud_f + cloud_f2) * 0.5
@@ -424,8 +424,8 @@ fragment main {
 
                 if (cloud_large > -0.1 && depth_factor > 0.0) { // Culling
                     float small_nz = 0.0;
-                    if (cloud_detail >= 1) { small_nz += billow_noise_3d((wpos - time * 5000.0) / 120000.0) - 0.5; }
-                    if (cloud_detail >= 3) { small_nz += (billow_noise_3d((wpos - time * 10000.0) / 30000.0) - 0.5) * 0.25; }
+                    if (cloud_detail >= 1) { small_nz += billow_noise_3d((wpos - time * 5000.0) * (1.0 / 120000.0)) - 0.5; }
+                    if (cloud_detail >= 3) { small_nz += (billow_noise_3d((wpos - time * 10000.0) * (1.0 / 30000.0)) - 0.5) * 0.25; }
 
                     float cloud_factor = max(
                         pow(max(
@@ -441,13 +441,14 @@ fragment main {
                         * pow(2.0, cloud_density);
                     sun_access = mix(
                         clamp(
-                            1.65 + (wpos.z - cloud_base) / cloud_depth * 0.25
+                            1.75 + (wpos.z - cloud_base + small_nz * 60000) / cloud_depth * 0.25
                             - dyn_clouds * 0.1
                             - dir.z * 0.1
-                            - clamp((cloud_f - cloud_f2) * 2.0, -0.5, 0.5)
-                            + pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25
+                            - clamp((cloud_f - cloud_f2 + small_nz * 0.23) * 1.5, -0.5, 0.5)
+                            - pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25 / (1.0 + pow(cloud_factor, 2) * 500)
                             - pow(cloud_factor, 0.03) * 1.0
                             + cloud_light_factor
+                            //+ (noise_3d((wpos - time * 10000.0) / 20000.0) - 0.5) * 50.3 * cloud_factor / (1.0 + pow(cloud_factor, 2) * 50000)
                         , 0.25, 1.0),
                         sun_access,
                         min(mist * 100000, 1.0)
