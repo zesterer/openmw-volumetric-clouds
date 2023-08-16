@@ -669,16 +669,22 @@ fragment main {
                 col.rgb = mix(mix(omw.sunColor.rgb, normalize(omw.sunColor.rgb), 0.75) * 0.4, col.rgb, 1.0 / (1.0 + max_dist * 0.005 * pow(interior_mist, 2)));
             }
         } else {
-			if (max_dist >= HORIZON * 0.9) {
-				if (replace_skybox) {
-					// Darken the sky above
-					col.rgb = sky_color * mix(vec3(0.5, 0.7, 0.9), vec3(1.0), vec3(1.0 - dir.z));
-				}
-				if (better_sun) {
-					col.rgb += sun_light(dir);
-				}
+		if (max_dist >= HORIZON * 0.9) {
+			if (replace_skybox) {
+				// Darken the sky above
+				col.rgb = sky_color * mix(vec3(0.5, 0.7, 0.9), vec3(1.0), vec3(1.0 - dir.z));
 			}
-            col = apply_fog(col, wpos, dir, max_dist, dyn_clouds, dyn_mist);
+			if (better_sun) {
+				col.rgb += sun_light(dir);
+			}
+		}
+
+		if (max_dist < HORIZON * 0.9){
+			col = apply_fog(col, wpos, dir, max_dist, dyn_clouds, dyn_mist);
+		} else if (dir.z > 0){
+			float fogFadeIn = clamp(dir.z * 5.0, 0, 1);
+			col = apply_fog(col, wpos, dir, max_dist, dyn_clouds, dyn_mist) * fogFadeIn + (col * (1-fogFadeIn));	
+		}
         }
 
         if (point_glow_enabled && point_glow_intensity > 0.0) {
