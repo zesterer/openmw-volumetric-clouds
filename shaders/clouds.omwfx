@@ -457,6 +457,19 @@ fragment main {
             }
         }
 
+	//trims away the glowing white region when looking off a high place
+	if (wpos.z < omw.eyePos.z + 10 && cull_dist > HORIZON * 0.001){
+		mist = 0.0;			
+	}
+
+	//fade out the clouds near the horizon to make them blend together
+	if (dir.z < -0.0){
+		cloud = 0.0;
+	} else if (dir.z < 0.2){
+		float cloudFadeIn = clamp(pow((dir.z * 5.0), 3), 0, 1);
+		cloud *= cloudFadeIn;
+	}
+
         //float attenuation = 0.00009 / (1.0 + wpos.z / 300);
 
         return vec2(
@@ -679,12 +692,7 @@ fragment main {
 			}
 		}
 
-		if (max_dist < HORIZON * 0.9){
-			col = apply_fog(col, wpos, dir, max_dist, dyn_clouds, dyn_mist);
-		} else if (dir.z > 0){
-			float fogFadeIn = clamp(dir.z * 5.0, 0, 1);
-			col = apply_fog(col, wpos, dir, max_dist, dyn_clouds, dyn_mist) * fogFadeIn + (col * (1-fogFadeIn));	
-		}
+		col = apply_fog(col, wpos, dir, max_dist, dyn_clouds, dyn_mist);
         }
 
         if (point_glow_enabled && point_glow_intensity > 0.0) {
