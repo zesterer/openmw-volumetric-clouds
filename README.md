@@ -109,3 +109,33 @@ settings, even the lowest-powered machines *should* be able to run the mod.
 ## Known issues
 
 - Rain is applied before post-processing shaders and don't write to the depth buffer, so clouds appear over rain drops
+
+## Inclusion in mod packs / mod lists
+
+I'm happy to have this mod included in mod packs and mod lists! However, open-source is a two-way street and there are a few
+things I'd request you do if you decide to redistribute this mod:
+
+### Let me know about it
+
+It's nice to know when my mod is included as part of other mods and it's often a useful way to discover possible improvements,
+incompatibilities, or bug reports from other users. I'd appreciate you opening an issue/discussion thread here, or dropping me
+an email. I'm regularly active (even if the mod hasn't been updated in a while) and usually respond to most things within a few
+hours. I'm also active on Mastodon and Discord.
+
+### Keep the mod up to date
+
+Nobody likes dealing with bug reports, especially when those bug reports turn out to be for problems that have been fixed already.
+I'd appreciate it if you make sure that you do your best to regularly update this mod for the duration of the mod pack's life,
+ideally so that the version users end up installing is no more than a few months old.
+
+### Encourage users to report bugs here
+
+Bug fixes are good! It's even better if everybody that uses the mod can benefit from those bug fixes. If you or your users find
+a problem, I'd appreciate it if you could try to report it here so that I can fix it. It's no good a bug report appearing on a
+mod page somewhere I'm not aware of, leading to it never being fixed.
+
+### Upstream patches and improvements
+
+Have you found a fix for a bug, or a nice improvement you think might be worth adding to the mod? Open a pull request or let me
+know about it! Even if you don't know how to use git/GitHub, you can still describe the fix in text and/or send me an email about
+it. When patches make their way upstream, everybody benefits: not just the select group of users using your specific mod pack.
