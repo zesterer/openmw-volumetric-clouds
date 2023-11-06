@@ -663,7 +663,7 @@ fragment main {
         }
 
 		if (omw.isInterior) {
-            if (interior_mist > 0.0) {
+            if (interior_mist > 0.0 && dot(omw.sunColor.rgb, omw.sunColor.rgb) > 0.01) {
                 // Slightly attenuate light in interiors
                 // TODO: Do proper volumetrics?
                 col.rgb = mix(mix(omw.sunColor.rgb, normalize(omw.sunColor.rgb), 0.75) * 0.4, col.rgb, 1.0 / (1.0 + max_dist * 0.005 * pow(interior_mist, 2)));
