@@ -445,8 +445,8 @@ fragment main {
                             - dyn_clouds * 0.1
                             - dir.z * 0.1
                             - clamp((cloud_f - cloud_f2 + small_nz * 0.23) * 1.5, -0.5, 0.5)
-                            - pow(small_nz, 2) * pow(dyn_clouds, 2) * 1.25 / (1.0 + pow(cloud_factor, 2) * 500)
-                            - pow(cloud_factor, 0.03) * 1.0
+                            - small_nz * small_nz * dyn_clouds * dyn_clouds * 1.25 / (1.0 + cloud_factor * cloud_factor * 500)
+                            - pow(cloud_factor + 0.001, 0.03) * 1.0
                             + cloud_light_factor
                             //+ (noise_3d((wpos - time * 10000.0) / 20000.0) - 0.5) * 50.3 * cloud_factor / (1.0 + pow(cloud_factor, 2) * 50000)
                         , 0.25, 1.0),
