@@ -151,7 +151,7 @@ uniform_bool point_glow_enabled {
 }
 
 uniform_float point_glow_intensity {
-    default = 0.5;
+    default = 0.35;
     min = 0.0;
     max = 1.0;
     step = 0.05;
@@ -178,7 +178,7 @@ uniform_float point_glow_max_fade_dist {
 }
 
 uniform_float point_glow_fade {
-    default = 0.0;
+    default = 0.2;
     min = 0.0;
     max = 1.0;
     step = 0.05;
@@ -193,7 +193,7 @@ uniform_bool point_glow_diffusion {
 }
 
 uniform_float point_glow_min {
-    default = 25.0;
+    default = 42.0;
     min = 0.0;
     max = 50.0;
     step = 1.0;
@@ -202,7 +202,7 @@ uniform_float point_glow_min {
 }
 
 uniform_float point_glow_falloff {
-    default = 1.4;
+    default = 1.175;
     min = 0.5;
     max = 2.0;
     step = 0.025;
@@ -442,8 +442,7 @@ fragment main {
                         * pow(depth_factor, 8)
                         // Fade out clouds if they come too close
                         * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0)
-                        // `cloud_density` varies in relatively large increments, so the + small_constant trick prevents UB
-                        * pow(2.0, cloud_density + 0.0001);
+                        * pow(2.0, cloud_density);
                     sun_access = mix(
                         clamp(
                             1.75 + (wpos.z - cloud_base + small_nz * 60000) / cloud_depth * 0.25
@@ -451,7 +450,7 @@ fragment main {
                             - dir.z * 0.1
                             - clamp((cloud_f - cloud_f2 + small_nz * 0.23) * 1.5, -0.5, 0.5)
                             - small_nz * small_nz * dyn_clouds * dyn_clouds * 1.25 / (1.0 + cloud_factor * cloud_factor * 500)
-                            - pow(cloud_factor + 0.001, 0.03) * 1.0
+                            - pow(cloud_factor, 0.03) * 1.0
                             + cloud_light_factor
                             //+ (noise_3d((wpos - time * 10000.0) / 20000.0) - 0.5) * 50.3 * cloud_factor / (1.0 + pow(cloud_factor, 2) * 50000)
                         , 0.25, 1.0),
@@ -501,7 +500,7 @@ fragment main {
         sqrt(max(omw.sunPos.z, 0.001))
     ) * sky_tone;
 
-    float sampling_factor = pow(1.25, sampling_quality + 0.0001);
+    float sampling_factor = pow(1.25, sampling_quality);
     float lspace(float wspace) { return log(wspace) * sampling_factor; }
     float wspace(float lspace) { return exp(lspace / sampling_factor); }
 
