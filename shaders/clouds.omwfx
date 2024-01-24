@@ -469,10 +469,12 @@ fragment main {
         );
     }
 
+    vec3 sun_dir = normalize(omw.sunPos.xyz);
+
     vec3 sun_color = mix(
         vec3(2, 0.5, 0.2) * 3,
         vec3(0.6, 0.5, 0.0),
-        pow(max(omw.sunPos.z + 0.2, 0.001), 0.1)
+        pow(max(sun_dir.z + 0.2, 0.001), 0.1)
     );
 
 	vec3 weather_tone[10]=vec3[](
@@ -494,10 +496,10 @@ fragment main {
         mix(
             vec3(1.2, 0.4, 0.2),
             vec3(0.01, 0.05, 0.1),
-            pow(max(-omw.sunPos.z + 0.2, 0.001), 0.2)
+            pow(max(-sun_dir.z + 0.2, 0.001), 0.2)
         ),
         vec3(0.6, 0.8, 1),
-        sqrt(max(omw.sunPos.z, 0.001))
+        sqrt(max(sun_dir.z, 0.001))
     ) * sky_tone;
 
     float sampling_factor = pow(1.25, sampling_quality);
@@ -505,13 +507,13 @@ fragment main {
     float wspace(float lspace) { return exp(lspace / sampling_factor); }
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist, in float dyn_clouds, in float dyn_mist) {
-        float sun_light = pow(max(omw.sunPos.z, 0), 0.25) * 1.3;
-        float moon_light = max(-omw.sunPos.z + 0.5, 0.0) * 0.3;
-        float direct_light = pow(max(dot(dir, normalize(omw.sunPos.xyz)), 0), 50)
-            * sqrt(clamp(omw.sunPos.z * 10.0, 0.001, 1))
+        float sun_light = pow(max(sun_dir.z + 0.35, 0), 1.0) * 1.3;
+        float moon_light = max(-sun_dir.z + 0.5, 0.0) * 0.3;
+        float direct_light = pow(max(dot(dir, sun_dir), 0), 50)
+            * max(sun_dir.z, 0.0) * 3.0
             // Regulate direct lighting with max_dist to prevent it appearing on top of close objects
             * min(max_dist * (1.0 / 100000.0), 1.0);
-        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, sky_tone, max(omw.sunPos.z, 0.3));
+        vec3 fog_color = (sun_light + moon_light) * mix(sky_color, sky_tone, max(sun_dir.z, 0.3));
 
         vec3 fog_light = fog_color + direct_light * sun_color;
 
@@ -570,7 +572,6 @@ fragment main {
 
     vec3 sun_light(vec3 dir) {
         const float frac = 0.003;
-        vec3 sun_dir = normalize(omw.sunPos.xyz);
         vec3 sun = clamp(pow(max((dot(dir, sun_dir) - (1.0 - frac)) * (1.0 / frac), 0.0001), 10), 0, 1) * sun_color * 50;
         vec3 sun_glare = pow(max(dot(dir, sun_dir), 0.0001), 10) * sun_color * 0.5;
 
