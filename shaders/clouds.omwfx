@@ -472,6 +472,7 @@ fragment main {
     vec3 sun_dir = normalize(omw.sunPos.xyz);
 
     vec3 sun_color = vec3(omw.sunColor);
+    // vec3 sun_color = vec3(int(sun.dir.z + 1), int(sun.dir.z + 1), int(sun.dir.z + 1));
 
 	vec3 weather_tone[10]=vec3[](
 		vec3(0.85),  //Clear
@@ -504,11 +505,11 @@ fragment main {
         //Define the atmospheric attenuation factors for sunlight's red, green, and blue channels
         vec3 att_factor = vec3(
             (pow((2 / (abs(sun_dir.z) + 1)), 2) / 2),
-            (sqrt(1 / (abs(sun_dir.z) + 1)) / 2),
-            pow((1 / (abs(sun_dir.z) + 1)), 2)
+            (sqrt(1 / (abs(sun_dir.z))) / 10 * (abs(sun_dir.z))),
+            (pow((1 / (abs(sun_dir.z) + 1)), 2) * 3 * (-1 * (abs(sun_dir.z))))
         );
         //Interpolate between original sun color and attenuated color based on sun's proximity to the horizon
-        vec3 sun_attenuated = vec3(mix(vec3(min((sun_color.x * ((dot(dir, sun_dir) + 1) / 2) * att_factor.x), 255), min((sun_color.y * (dot(dir, sun_dir) + 1) * att_factor.y), 255), min((sun_color.z / ((dot(dir, sun_dir) + 1) * att_factor.z)),255)), sun_color, abs(sun_dir.z)));
+        vec3 sun_attenuated = vec3(mix(vec3(min((sun_color.x * ((dot(dir, sun_dir) + 1) / 2) * att_factor.x), 255), min((sun_color.y * (dot(dir, sun_dir) + 1) * att_factor.y), 255), min((sun_color.z / (dot(dir, sun_dir) + 2) * att_factor.z),255)), sun_color, abs(sun_dir.z)));
         //Have fog color be directionally influenced by sunlight
         vec3 fog_color = mix(
             vec3(omw.fogColor), 
@@ -566,7 +567,7 @@ fragment main {
 
             // Rayleigh scattering
             vec3 ambient = vec3(omw.ambientColor);
-            col.rgb = mix(col.rgb, (mix(mix(sky_color,(mix(mix(sky_color, mix(vec3(max(sun_attenuated.x, sky_color.x), max(sun_attenuated.y, sky_color.y), max(sun_attenuated.z, sky_color.z)), mix(max(ambient, sky_color), fog_color, normalize(pow((dot(sun_dir, dir) + 1), 2))), normalize(pow((dot(sun_dir, dir) + 1), 4))), (dot(dir, sun_dir) + 1)), sun_attenuated + sky_color, (sqrt(max(dot(dir, sun_dir), 0.0001)) / 2))), (dot(dir, sun_dir), + 1)), max(max(sky_color, ambient), fog_color), abs(sun_dir.z))), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + (pow((dot(dir, sun_dir), + 1), 2) )* 5))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
+            col.rgb = mix(col.rgb, (mix(mix(sky_color,(mix(mix(sky_color, mix(vec3(max(sun_attenuated.x, sky_color.x), max(sun_attenuated.y, sky_color.y), max(sun_attenuated.z, sky_color.z)), mix(max(ambient, sky_color), fog_color, normalize(pow((dot(sun_dir, dir) + 1), 2))), normalize(pow((dot(sun_dir, dir) + 1), 4))), (dot(dir, sun_dir) + 1)), sun_attenuated + sky_color, (sqrt(max(((dot(dir, sun_dir) + 1)/ 2), 1))) )), (dot(dir, sun_dir), + 1)), max(max(sky_color, ambient), fog_color), abs(sun_dir.z))), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow((dot(dir, sun_dir), + 1), 2)), 1)* 5))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
