@@ -327,7 +327,7 @@ fragment main {
     // Replace this function with the one below it if your GPU can't handle bitwise ops
     float hash_one(int q) {
         int n = ((M3 * q) ^ M2) * M1;
-        return float(n) * (1.0 / float(0xffffffffu));
+        return float(n) * (1.0 / float(0xffffffff));
     }
 
     float noise_2d(vec2 pos) {
@@ -520,7 +520,7 @@ fragment main {
             ), 
             (sqrt(max(dot(dir,sun_dir), 0.0001))) / 2);
 
-        vec3 fog_light = fog_color + pow((direct_light * 0.05), ((sun_color.x + sun_color.y + sun_color.x) * 30 / 255)) * sun_attenuated;
+        vec3 fog_light = fog_color + direct_light * sun_attenuated;
 
         float dist = max_dist;
 
@@ -579,7 +579,7 @@ fragment main {
     vec3 sun_light(vec3 dir) {
         const float frac = 0.003;
         vec3 sun = clamp(pow(max((dot(dir, sun_dir) - (1.0 - frac)) * (1.0 / frac), 0.0001), 10), 0, 1) * sun_color * 50;
-        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0.0001), 10) * sun_color * 0.2;
+        vec3 sun_glare = pow(max(dot(dir, sun_dir), 0.0001), 10) * sun_color * 0.5;
 
         return sun + sun_glare;
     }
@@ -666,7 +666,7 @@ fragment main {
         float dyn_mist = 0.4;
         if (dynamic_mist) {
             //Calc mist based on weather state
-            float weather_mist = omw.fogColor.z;
+            float weather_mist = mix(mist_transition[omw.weatherID],mist_transition[omw.nextWeatherID],omw.weatherTransition);
             //Filter for time of day 5-8 = max mist, blending an hour each side.
             float morning_mist = 1-abs(omw.gameHour-clamp(omw.gameHour, 5 , 8));
             //Which ever is greater wins..
@@ -683,7 +683,7 @@ fragment main {
 			if (max_dist >= HORIZON * 0.9) {
 				if (replace_skybox) {
 					// Darken the sky above
-					col.rgb = sky_color * mix(sky_color, vec3(1.0), vec3(1.0 - dir.z));
+					col.rgb = sky_color * mix(vec3(0.5, 0.7, 0.9), vec3(1.0), vec3(1.0 - dir.z));
 				}
 				if (better_sun) {
 					col.rgb += sun_light(dir);
