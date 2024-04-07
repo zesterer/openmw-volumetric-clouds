@@ -476,7 +476,7 @@ fragment main {
     //Define the atmospheric attenuation factors for sunlight's red, green, and blue channels
     vec3 att_factor = vec3(
         (pow((2 / (zenith_fac + 1)), 2) * 0.5),
-        (sqrt(1 / (zenith_fac)) * 0.1 * (zenith_fac)),
+        (sqrt(1 / (zenith_fac + 1)) * 0.1 * (zenith_fac)),
         (pow((1 / (zenith_fac + 1)), 2) * 3 * (-1 * (zenith_fac)))
     );
 
@@ -506,7 +506,7 @@ fragment main {
     float wspace(float lspace) { return exp(lspace / sampling_factor); }
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist, in float dyn_clouds, in float dyn_mist) {
-        float sun_prox = normalize(dot(dir,sun_dir) + 1)    
+        float sun_prox = normalize(dot(dir,sun_dir) + 1);    
         float sun_light = pow(max(sun_dir.z + 0.35, 0), 1.0) * 1.3;
         float moon_light = max(-sun_dir.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, sun_dir), 0), 50)
@@ -574,7 +574,7 @@ fragment main {
             vec3 sky_fog_scatter = mix(max(ambient, sky_color), fog_color, normalize(pow(sun_prox, 2)));
             vec3 sun_gradient = mix(sky_sun_blend, sky_fog_scatter, normalize(pow(sun_prox, 4)));
             vec3 sun_in_atmo = mix(sky_color, sun_gradient, sun_prox);
-            col.rgb = mix(col.rgb, mix(sun_in_atmo, sun_attenuated + sky_color, (sqrt(sun_prox * 0.5))), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow(sun_prox, 2)), 1) * 5))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
+            col.rgb = mix(col.rgb, mix(sun_in_atmo, sun_attenuated + sky_color, (sqrt(sun_prox * 0.5))), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow(max(sun_prox, 0.0001), 2)), 1) * 5))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
