@@ -499,14 +499,13 @@ fragment main {
 
     vec3 sky_color = vec3(omw.skyColor);
     vec3 ambient = vec3(omw.ambientColor);
-    vec3 sky_sun_blend = vec3(max(sun_attenuated.x, sky_color.x), max(sun_attenuated.y, sky_color.y), max(sun_attenuated.z, sky_color.z));
 
     float sampling_factor = pow(1.25, sampling_quality);
     float lspace(float wspace) { return log(wspace) * sampling_factor; }
     float wspace(float lspace) { return exp(lspace / sampling_factor); }
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist, in float dyn_clouds, in float dyn_mist) {
-        float sun_prox = normalize(dot(dir,sun_dir) + 1);    
+        float sun_prox = ((dot(dir,sun_dir) + 1) * 0.5);    
         float sun_light = pow(max(sun_dir.z + 0.35, 0), 1.0) * 1.3;
         float moon_light = max(-sun_dir.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, sun_dir), 0), 50)
@@ -514,7 +513,8 @@ fragment main {
             // Regulate direct lighting with max_dist to prevent it appearing on top of close objects
             * min(max_dist * (1.0 / 100000.0), 1.0);
         //Interpolate between original sun color and attenuated color based on sun's proximity to the horizon
-        vec3 sun_attenuated = vec3(mix(vec3(min((sun_color.x * ((dot(dir, sun_dir) + 1) / 2) * att_factor.x), 255), min((sun_color.y * (dot(dir, sun_dir) + 1) * att_factor.y), 255), min((sun_color.z / (dot(dir, sun_dir) + 2) * att_factor.z),255)), sun_color, abs(sun_dir.z)));
+        vec3 sun_attenuated = vec3(mix(vec3(min((sun_color.x * sun_prox * att_factor.x), 255), min((sun_color.y * sun_prox * 2 * att_factor.y), 255), min((sun_color.z / sun_prox + 1 * att_factor.z),255)), sun_color, zenith_fac));
+        vec3 sky_sun_blend = vec3(max(sun_attenuated.x, sky_color.x), max(sun_attenuated.y, sky_color.y), max(sun_attenuated.z, sky_color.z));
         //Have fog color be directionally influenced by sunlight
         vec3 fog_color = mix(
             vec3(omw.fogColor), 
@@ -574,7 +574,7 @@ fragment main {
             vec3 sky_fog_scatter = mix(max(ambient, sky_color), fog_color, normalize(pow(sun_prox, 2)));
             vec3 sun_gradient = mix(sky_sun_blend, sky_fog_scatter, normalize(pow(sun_prox, 4)));
             vec3 sun_in_atmo = mix(sky_color, sun_gradient, sun_prox);
-            col.rgb = mix(col.rgb, mix(sun_in_atmo, sun_attenuated + sky_color, (sqrt(sun_prox * 0.5))), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow(max(sun_prox, 0.0001), 2)), 1) * 5))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
+            col.rgb = mix(col.rgb, mix(sky_color, mix(sun_in_atmo, sun_attenuated + sky_color, (sqrt(sun_prox))), sun_prox), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow(max(sun_prox, 0.0001), 2)), 1) / pow((zenith_fac + 2), 2)) * sqrt(sun_prox + 1))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
