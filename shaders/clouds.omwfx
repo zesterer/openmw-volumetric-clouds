@@ -574,7 +574,7 @@ fragment main {
             vec3 sky_fog_scatter = mix(max(ambient, sky_color), fog_color, normalize(pow(sun_prox, 2)));
             vec3 sun_gradient = mix(sky_sun_blend, sky_fog_scatter, normalize(pow(sun_prox, 4)));
             vec3 sun_in_atmo = mix(sky_color, sun_gradient, sun_prox);
-            col.rgb = mix(col.rgb, mix(sky_color, mix(sun_in_atmo, sun_attenuated + sky_color, (sqrt(sun_prox))), sun_prox), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow(max(sun_prox, 0.0001), 2)), 1) / pow((zenith_fac + 2), 2)) * sqrt(sun_prox + 1))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
+            col.rgb = mix(col.rgb, mix(sky_fog_scatter, mix(sun_in_atmo, sun_attenuated + sky_color, (sqrt(sun_prox))), sun_prox), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + max((pow(max(sun_prox, 0.0001), 2)), 1) / pow((zenith_fac + 2), 2)) * sqrt(sun_prox + 1))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0));
 
             dist = new_dist;
             f -= 1;
