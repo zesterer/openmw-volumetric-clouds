@@ -14,7 +14,16 @@ uniform_float scattering_factor {
     max = 5.0;
     step = 0.1;
     display_name = "Rayleigh Scattering";
-    description = "Amount of rayleigh scattering applied to light passing through the atmosphere (i.e: increasing this will tint distant objects toward the color of the sky)";
+    description = "Amount of rayleigh scattering applied to light passing through the atmosphere (i.e: increasing this will tint distant objects toward the color of the sky (and sun on sunrises and sunsets))";
+}
+
+uniform_float scattering_attenuation {
+    default = 0.5;
+    min = 0.0;
+    max = 1.0;
+    step = 0.01;
+    display_name = "Scattering Attenuation";
+    description = "Use this to blend between original sun color and atmospherically attenuated sun color for use in scattering (i.e: increasing this will cause sunlight to get more modified the closer the sun is to the horizon)";
 }
 
 uniform_bool replace_skybox {
@@ -513,7 +522,7 @@ fragment main {
             // Regulate direct lighting with max_dist to prevent it appearing on top of close objects
             * min(max_dist * (1.0 / 100000.0), 1.0);
         //Interpolate between original sun color and attenuated color based on sun's proximity to the horizon
-        vec3 sun_attenuated = vec3(mix(vec3((sun_color.x * (sun_prox * 2) * att_factor.x * (zenith_fac + 0.5)), ((sun_color.y * att_factor.y - (sun_color.y * zenith_fac)) / (zenith_fac + 1.0)), (sun_color.z * att_factor.z - ((sun_prox * sun_color.z) / (zenith_fac * 0.5 + 0.25)))), sun_color, zenith_fac));
+        vec3 sun_attenuated = vec3(mix(mix(sun_color, vec3((sun_color.x * (sun_prox * 2) * att_factor.x * (zenith_fac + 0.5)), ((sun_color.y * att_factor.y - (sun_color.y * zenith_fac)) / (zenith_fac + 1.0)), (sun_color.z * att_factor.z - ((sun_prox * sun_color.z) / (zenith_fac * 0.5 + 0.25)))), scattering_attenuation), sun_color, zenith_fac));
         vec3 sky_sun_blend = vec3(max(sun_attenuated.x, sky_color.x), max(sun_attenuated.y, sky_color.y), max(sun_attenuated.z, sky_color.z));
         //Have fog color be directionally influenced by sunlight
         vec3 fog_color = mix(
