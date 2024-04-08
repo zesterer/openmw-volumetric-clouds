@@ -475,8 +475,8 @@ fragment main {
 
     //Define the atmospheric attenuation factors for sunlight's red, green, and blue channels
     vec3 att_factor = vec3(
-        (pow((2.0 / (zenith_fac + 1.0)), 3.0) * (0.5)),
-        (sqrt(1.0 / (zenith_fac + 2.0)) * 0.1 * (zenith_fac)),
+        (pow((4.0 / (zenith_fac + 1.0)), 2.0) * 0.5),
+        (pow((4.0 / (zenith_fac + 1.0)), 3.0) * (zenith_fac) * 0.5),
         (pow((2.0 / (zenith_fac + 1.0)), 2.0) * 0.5)
     );
 
@@ -513,7 +513,7 @@ fragment main {
             // Regulate direct lighting with max_dist to prevent it appearing on top of close objects
             * min(max_dist * (1.0 / 100000.0), 1.0);
         //Interpolate between original sun color and attenuated color based on sun's proximity to the horizon
-        vec3 sun_attenuated = vec3(mix(vec3((sun_color.x * (sun_prox * 2) * att_factor.x), ((sun_color.y * att_factor.y - (sun_color.y * zenith_fac)) / (zenith_fac + 1)), (sun_color.z * att_factor.z - ((sun_prox * sun_color.z) / (zenith_fac * 0.5 + 0.25)))), sun_color / (zenith_fac + 5), zenith_fac));
+        vec3 sun_attenuated = vec3(mix(vec3((sun_color.x * (sun_prox * 2) * att_factor.x * (zenith_fac + 0.5)), ((sun_color.y * att_factor.y - (sun_color.y * zenith_fac)) / (zenith_fac + 1.0)), (sun_color.z * att_factor.z - ((sun_prox * sun_color.z) / (zenith_fac * 0.5 + 0.25)))), sun_color, zenith_fac));
         vec3 sky_sun_blend = vec3(max(sun_attenuated.x, sky_color.x), max(sun_attenuated.y, sky_color.y), max(sun_attenuated.z, sky_color.z));
         //Have fog color be directionally influenced by sunlight
         vec3 fog_color = mix(
