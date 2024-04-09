@@ -580,10 +580,10 @@ fragment main {
             */
 
             // Rayleigh scattering
-            vec3 sky_fog_scatter = mix(max(ambient, sky_color), fog_color, normalize(pow(sun_prox, 2.0)));
-            vec3 sun_gradient = mix(sky_sun_blend, sky_fog_scatter, normalize(pow(sun_prox, 4.0)));
+            vec3 sky_fog_scatter = mix(sky_color, fog_color, normalize(pow(sun_prox, 2.0)));
+            vec3 sun_gradient = mix(sky_fog_scatter, sky_sun_blend, normalize(pow(sun_prox, 4.0)));
             vec3 sun_in_atmo = mix(sky_color, sun_gradient, sun_prox);
-            col.rgb = mix(col.rgb, mix(sky_fog_scatter, (mix(sun_in_atmo, sun_attenuated + sky_color, (normalize(exp(sun_prox)) * 0.01)) + (sun_gradient * zenith_fac)), sun_prox), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + (pow(max(sun_prox, 0.0001), 2.0)) / pow((zenith_fac + 5.0), 5.0)))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0) / pow(zenith_fac + 1.0, 2.0));
+            col.rgb = mix(col.rgb, mix(sky_fog_scatter, sun_in_atmo, sun_prox), (1.0 - 1.0 / (1.0 + step * 0.00001 * scattering_factor * (2 + (pow(max(sun_prox, 0.0001), 2.0)) / pow((zenith_fac + 5.0), 5.0)))) * clamp((15000 - spos.z) * 0.0001, 0.0, 1.0) / pow(zenith_fac + 1.0, 2.0));
 
             dist = new_dist;
             f -= 1;
