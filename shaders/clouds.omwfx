@@ -418,7 +418,7 @@ fragment main {
                         * 0.01
                         * pow(depth_factor, 8.0)
                         // Fade out clouds if they come too close
-                        * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0, 1.0)
+                        * clamp((cull_dist - MIN_CLOUD_DIST) * (1.0 / MIN_CLOUD_DIST), 0.0, 1.0)
                         * pow(2.0, cloud_density);
                     sun_access = mix(
                         clamp(
@@ -484,7 +484,7 @@ fragment main {
     float wspace(float lspace) { return exp(lspace / sampling_factor); }
 
     vec4 apply_fog(vec4 col, vec3 wpos, vec3 dir, float max_dist, in float dyn_clouds, in float dyn_mist) {
-        float sun_light = pow(max(sun_dir.z + 0.35, 0), 1.0) * 1.3;
+        float sun_light = pow(max(sun_dir.z + 0.35, 0.0), 1.0) * 1.3;
         float moon_light = max(-sun_dir.z + 0.5, 0.0) * 0.3;
         float direct_light = pow(max(dot(dir, sun_dir), 0.0), 50.0)
             * max(sun_dir.z, 0.0) * 3.0
@@ -498,7 +498,7 @@ fragment main {
 
         // Initial
         //vec2 ifog = fog_at(omw.eyePos.xyz + dir * max_dist, max_dist, dir, dyn_clouds, dyn_mist) * vec2(0.1, 1.0);
-        //ifog.x *= pow(abs(dir.z) + 0.3, 2) * 0.75;
+        //ifog.x *= pow(abs(dir.z) + 0.3, 2.0) * 0.75;
         //col.rgb = mix(fog_light * ifog.y, col.rgb, pow(0.9999, abs(exp(floor(f) * step_factor) * 20.0 - max_dist) * ifog.x * 10000.0));
 
         if (debug) {
@@ -576,7 +576,7 @@ fragment main {
             float distance_2 = dot(difference, difference);
 
             if (clamp_point_glow) {
-                if (distance_2 > pow(omw_GetPointLightRadius(i), 2)) {
+                if (distance_2 > pow(omw_GetPointLightRadius(i), 2.0)) {
                     continue;
                 }
             }
@@ -599,7 +599,7 @@ fragment main {
 			}
 
             if (clamp_point_glow) {
-                strength *= max(0.0, 1.0 - distance_2 / pow(omw_GetPointLightRadius(i), 2));
+                strength *= max(0.0, 1.0 - distance_2 / pow(omw_GetPointLightRadius(i), 2.0));
             }
 
             vec3 light_color = omw_GetPointLightDiffuse(i) * 100.0 * strength;
@@ -617,29 +617,29 @@ fragment main {
 
         //Array of cloud densities per weather ID
         float cloud_transition[10];
-        cloud_transition[0]	= float(0.2);  //Clear
-        cloud_transition[1]	= float(0.35); //Cloudy
-        cloud_transition[2]	= float(0.25);  //Foggy
-        cloud_transition[3]	= float(0.4);  //Overcast
-        cloud_transition[4]	= float(0.5);  //Rain
-        cloud_transition[5]	= float(0.6);  //Thunder
-        cloud_transition[6]	= float(0.7);  //Ash
-        cloud_transition[7]	= float(0.7);  //Blight
-        cloud_transition[8]	= float(0.5);  //Snow
-        cloud_transition[9]	= float(0.6);   //Blizzard
+        cloud_transition[0] = float(0.2);  //Clear
+        cloud_transition[1] = float(0.35); //Cloudy
+        cloud_transition[2] = float(0.25);  //Foggy
+        cloud_transition[3] = float(0.4);  //Overcast
+        cloud_transition[4] = float(0.5);  //Rain
+        cloud_transition[5] = float(0.6);  //Thunder
+        cloud_transition[6] = float(0.7);  //Ash
+        cloud_transition[7] = float(0.7);  //Blight
+        cloud_transition[8] = float(0.5);  //Snow
+        cloud_transition[9] = float(0.6);   //Blizzard
 
         //Array of mist densities per weather ID
         float mist_transition[10];
-        mist_transition[0] =	float(0.1);  //Clear
-        mist_transition[1] =	float(0.25);  //Cloudy
-        mist_transition[2] =	float(0.75);  //Foggy
-        mist_transition[3] =	float(0.35);  //Overcast
-        mist_transition[4] =	float(0.4);  //Rain
-        mist_transition[5] =	float(0.4);  //Thunder
-        mist_transition[6] =	float(0.3);  //Ash
-        mist_transition[7] =	float(0.2);  //Blight
-        mist_transition[8] =	float(0.3);  //Snow
-        mist_transition[9] =	float(0.4);   //Blizzard
+        mist_transition[0] = float(0.1);  //Clear
+        mist_transition[1] = float(0.25);  //Cloudy
+        mist_transition[2] = float(0.75);  //Foggy
+        mist_transition[3] = float(0.35);  //Overcast
+        mist_transition[4] = float(0.4);  //Rain
+        mist_transition[5] = float(0.4);  //Thunder
+        mist_transition[6] = float(0.3);  //Ash
+        mist_transition[7] = float(0.2);  //Blight
+        mist_transition[8] = float(0.3);  //Snow
+        mist_transition[9] = float(0.4);   //Blizzard
 
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
 
