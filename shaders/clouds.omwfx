@@ -266,6 +266,34 @@ fragment main {
 
     #define HORIZON 100000000.0
 
+    //Array of cloud densities per weather ID
+    float cloud_transition(int i) {
+        if (i == 0) return 0.2;  //Clear
+        if (i == 1) return 0.35; //Cloudy
+        if (i == 2) return 0.25;  //Foggy
+        if (i == 3) return 0.4;  //Overcast
+        if (i == 4) return 0.5;  //Rain
+        if (i == 5) return 0.6;  //Thunder
+        if (i == 6) return 0.7;  //Ash
+        if (i == 7) return 0.7;  //Blight
+        if (i == 8) return 0.5;  //Snow
+        return 0.6;   //Blizzard
+    }
+
+    //Array of mist densities per weather ID
+    float mist_transition (int i) {
+        if (i == 0) return 0.1;  //Clear
+        if (i == 1) return 0.25;  //Cloudy
+        if (i == 2) return 0.75;  //Foggy
+        if (i == 3) return 0.35;  //Overcast
+        if (i == 4) return 0.4;  //Rain
+        if (i == 5) return 0.4;  //Thunder
+        if (i == 6) return 0.3;  //Ash
+        if (i == 7) return 0.2;  //Blight
+        if (i == 8) return 0.3;  //Snow
+        return 0.4;   //Blizzard
+    }
+
     float dist_at(vec2 uv) {
         float depth = omw_GetDepth(uv);
         mat4 inv = omw.invViewMatrix * omw.invProjectionMatrix;
@@ -455,15 +483,15 @@ fragment main {
     );
 
     vec3 weather_tone(int i) {
-        if( i == 0) return vec3(0.85);  //Clear
-        if( i == 1) return vec3(0.7); //Cloudy
-        if( i == 2) return vec3(0.65);  //Foggy
-        if( i == 3) return vec3(0.6);  //Overcast
-        if( i == 4) return vec3(0.55);  //Rain
-        if( i == 5) return vec3(0.5, 0.5, 0.6);  //Thunder
-        if( i == 6) return vec3(1.0, 0.5, 0.25);  //Ash
-        if( i == 7) return vec3(1.0, 0.5, 0.5);  //Blight
-        if( i == 8) return vec3(1.0);   //Snow
+        if(i == 0) return vec3(0.85);  //Clear
+        if(i == 1) return vec3(0.7); //Cloudy
+        if(i == 2) return vec3(0.65);  //Foggy
+        if(i == 3) return vec3(0.6);  //Overcast
+        if(i == 4) return vec3(0.55);  //Rain
+        if(i == 5) return vec3(0.5, 0.5, 0.6);  //Thunder
+        if(i == 6) return vec3(1.0, 0.5, 0.25);  //Ash
+        if(i == 7) return vec3(1.0, 0.5, 0.5);  //Blight
+        if(i == 8) return vec3(1.0);   //Snow
         return vec3(1.0);   //Blizzard
     }
 
@@ -614,33 +642,6 @@ fragment main {
     }
 
     void main() {
-
-        //Array of cloud densities per weather ID
-        float cloud_transition[10];
-        cloud_transition[0] = float(0.2);  //Clear
-        cloud_transition[1] = float(0.35); //Cloudy
-        cloud_transition[2] = float(0.25);  //Foggy
-        cloud_transition[3] = float(0.4);  //Overcast
-        cloud_transition[4] = float(0.5);  //Rain
-        cloud_transition[5] = float(0.6);  //Thunder
-        cloud_transition[6] = float(0.7);  //Ash
-        cloud_transition[7] = float(0.7);  //Blight
-        cloud_transition[8] = float(0.5);  //Snow
-        cloud_transition[9] = float(0.6);   //Blizzard
-
-        //Array of mist densities per weather ID
-        float mist_transition[10];
-        mist_transition[0] = float(0.1);  //Clear
-        mist_transition[1] = float(0.25);  //Cloudy
-        mist_transition[2] = float(0.75);  //Foggy
-        mist_transition[3] = float(0.35);  //Overcast
-        mist_transition[4] = float(0.4);  //Rain
-        mist_transition[5] = float(0.4);  //Thunder
-        mist_transition[6] = float(0.3);  //Ash
-        mist_transition[7] = float(0.2);  //Blight
-        mist_transition[8] = float(0.3);  //Snow
-        mist_transition[9] = float(0.4);   //Blizzard
-
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
 
         vec3 wpos = wpos_at(omw_TexCoord);
@@ -653,8 +654,8 @@ fragment main {
         if (dynamic_clouds) {
             //Adjust cloud according to weatherID
             dyn_clouds *= mix(
-                cloud_transition[omw.weatherID],
-                cloud_transition[omw.nextWeatherID],
+                cloud_transition(omw.weatherID),
+                cloud_transition(omw.nextWeatherID),
                 omw.weatherTransition
             ) * 3.0;
             dyn_clouds = clamp(dyn_clouds, 0.0, 1.0);
@@ -664,7 +665,7 @@ fragment main {
         float dyn_mist = 0.4;
         if (dynamic_mist) {
             //Calc mist based on weather state
-            float weather_mist = mix(mist_transition[omw.weatherID],mist_transition[omw.nextWeatherID],omw.weatherTransition);
+            float weather_mist = mix(mist_transition(omw.weatherID), mist_transition(omw.nextWeatherID), omw.weatherTransition);
             //Filter for time of day 5-8 = max mist, blending an hour each side.
             float morning_mist = 1.0-abs(omw.gameHour-clamp(omw.gameHour, 5.0 , 8.0));
             //Which ever is greater wins..
