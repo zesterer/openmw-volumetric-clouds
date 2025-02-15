@@ -724,7 +724,7 @@ fragment main {
                 ditherCoord += 1337.0*fract(omw.simulationTime);
 
             float bn = omw_Texture2D(blueNoise, ditherCoord).r; // not masked by the fog, so dithering applies to the full screen. Masking it would require a lot of refactoring, or running fog functions twice.
-            float dithering = bn / dithering_strength;
+            float dithering = bn * (1.0 / dithering_strength);
             col.rgb += dithering;
         }
 
