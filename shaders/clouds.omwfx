@@ -223,6 +223,21 @@ uniform_bool dithering_enabled {
     description = "Whether dithering is enabled, reducing color banding in dark areas";
 }
 
+uniform_bool temporal_dithering {
+    default = true;
+    display_name = "Temporal Dithering";
+    description = "Whether the dithering should be animated. Animated dithering changes each frame, making the dither pattern far less visible";
+}
+
+uniform_float dithering_strength {
+    default = 256.0;
+    min = 1.0;
+    max = 256.0;
+    step = 1.0;
+    display_name = "Dithering Strength";
+    description = "Strength of the dithering effect, lower values make the effect stronger. Stronger dithering reduces more banding, but the dithering pattern becomes more visible.";
+}
+
 uniform_float interior_mist {
     default = 0.15;
     min = 0.0;
@@ -259,6 +274,14 @@ sampler_2d billow_noise {
     source_format = red;
     internal_format = red;
     source_type = unsigned_byte;
+}
+
+sampler_2d blueNoise {
+    source = "textures/blue-noise256.png";
+    mag_filter = nearest;
+    min_filter = nearest;
+    wrap_s = repeat;
+    wrap_t = repeat;
 }
 
 fragment main {
@@ -696,7 +719,13 @@ fragment main {
         }
 
         if (dithering_enabled) {
-            col.rgb += rand(omw_TexCoord * 1000.0) * 2.0 / 255.0;
+            vec2 ditherCoord = (omw_TexCoord.xy * omw.resolution) / 256.0; // divide by texture resolution
+            if (temporal_dithering)
+                ditherCoord += 1337.0*fract(omw.simulationTime);
+
+            float bn = omw_Texture2D(blueNoise, ditherCoord).r; // not masked by the fog, so dithering applies to the full screen. Masking it would require a lot of refactoring, or running fog functions twice.
+            float dithering = bn / dithering_strength;
+            col.rgb += dithering;
         }
 
         omw_FragColor = col;
