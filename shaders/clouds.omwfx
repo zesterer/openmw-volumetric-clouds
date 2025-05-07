@@ -346,11 +346,8 @@ fragment main {
     #define M2 388370683
     #define M3 396128171
 
-    // Set to 1 if your GPU can't handle bitwise ops
-    #define NO_BITWISE 0
-
     float hash_one(int q) {
-#if defined(GL4ES) || NO_BITWISE
+#if defined(GL4ES) || __VERSION__ < 130
         return fract(sin(float(q)) * 43758.5453123);
 #else
         int n = ((M3 * q) ^ M2) * M1;
@@ -518,8 +515,7 @@ fragment main {
         return vec3(1.0);   //Blizzard
     }
 
-    vec3 sky_tone = mix(weather_tone(omw.weatherID), weather_tone(omw.nextWeatherID), omw.weatherTransition);
-
+    vec3 sky_tone;
     vec3 sky_color = mix(
         mix(
             vec3(1.2, 0.4, 0.2),
@@ -528,7 +524,7 @@ fragment main {
         ),
         vec3(0.6, 0.8, 1.0),
         sqrt(max(sun_dir.z, 0.001))
-    ) * sky_tone;
+    );
 
     float sampling_factor = pow(1.25, sampling_quality);
     float lspace(float wspace) { return log(wspace) * sampling_factor; }
@@ -665,6 +661,8 @@ fragment main {
     }
 
     void main() {
+        sky_tone = mix(weather_tone(omw.weatherID), weather_tone(omw.nextWeatherID), omw.weatherTransition);
+        sky_color *= sky_tone;
         vec4 col = omw_Texture2D(omw_SamplerLastShader, omw_TexCoord);
 
         vec3 wpos = wpos_at(omw_TexCoord);
